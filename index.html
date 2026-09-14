@@ -1,0 +1,3096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hatian — Fair share for every housemate</title>
+<style>
+  :root{
+    --bg:#060a12;--card:rgba(255,255,255,.045);--border:rgba(255,255,255,.09);
+    --text:#e8eefb;--muted:#8b9ab3;--accent:#38bdf8;--accent2:#22d3ee;
+    --good:#34d399;--warn:#fbbf24;--bad:#f87171;--ac:#fbbf24;
+    --other:#a78bfa;--rent:#34d399;--deduct:#f472b6;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;min-height:100vh;font-family:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--text);
+    background:radial-gradient(900px 620px at 8% -12%,rgba(56,189,248,.20),transparent 62%),radial-gradient(820px 600px at 102% -4%,rgba(34,211,238,.14),transparent 58%),radial-gradient(760px 700px at 50% 118%,rgba(59,130,246,.14),transparent 62%),var(--bg);
+    background-attachment:fixed;padding:34px 20px 70px;-webkit-font-smoothing:antialiased;transition:background .5s ease}
+  body.tab-electric{background:radial-gradient(900px 620px at 8% -12%,rgba(251,191,36,.17),transparent 62%),radial-gradient(820px 600px at 102% -4%,rgba(249,115,22,.13),transparent 58%),radial-gradient(760px 700px at 50% 118%,rgba(251,146,60,.11),transparent 62%),var(--bg);background-attachment:fixed}
+  body.tab-rent{background:radial-gradient(900px 620px at 8% -12%,rgba(52,211,153,.18),transparent 62%),radial-gradient(820px 600px at 102% -4%,rgba(16,185,129,.13),transparent 58%),radial-gradient(760px 700px at 50% 118%,rgba(5,150,105,.11),transparent 62%),var(--bg);background-attachment:fixed}
+  body.tab-others{background:radial-gradient(900px 620px at 8% -12%,rgba(167,139,250,.18),transparent 62%),radial-gradient(820px 600px at 102% -4%,rgba(139,92,246,.13),transparent 58%),radial-gradient(760px 700px at 50% 118%,rgba(124,58,237,.11),transparent 62%),var(--bg);background-attachment:fixed}
+  body.tab-deductions{background:radial-gradient(900px 620px at 8% -12%,rgba(244,114,182,.18),transparent 62%),radial-gradient(820px 600px at 102% -4%,rgba(219,39,119,.12),transparent 58%),radial-gradient(760px 700px at 50% 118%,rgba(190,24,93,.10),transparent 62%),var(--bg);background-attachment:fixed}
+  body.tab-summary{background:radial-gradient(900px 620px at 8% -12%,rgba(125,211,252,.20),transparent 62%),radial-gradient(820px 600px at 102% -4%,rgba(167,139,250,.15),transparent 58%),radial-gradient(760px 700px at 50% 118%,rgba(52,211,153,.13),transparent 62%),var(--bg);background-attachment:fixed}
+  .app{max-width:1120px;margin:0 auto}
+  .hero{display:flex;align-items:flex-start;gap:16px;margin-bottom:24px}
+  .hero .logo{width:56px;height:56px;flex:0 0 auto;border-radius:18px;display:grid;place-items:center;font-size:24px;font-weight:800;letter-spacing:-.02em;
+    background:linear-gradient(135deg,rgba(125,211,252,.28),rgba(167,139,250,.14));border:1px solid rgba(167,139,250,.42);
+    box-shadow:0 0 44px rgba(167,139,250,.32),inset 0 1px 0 rgba(255,255,255,.15);animation:float 5s ease-in-out infinite;color:#fff;text-shadow:0 0 20px rgba(125,211,252,.6);
+    transition:background .5s,border-color .5s,box-shadow .5s}
+  .hero .logo.electric{background:linear-gradient(135deg,rgba(251,191,36,.28),rgba(249,115,22,.10));border-color:rgba(251,191,36,.38);box-shadow:0 0 44px rgba(251,191,36,.30),inset 0 1px 0 rgba(255,255,255,.15)}
+  .hero .logo.rent{background:linear-gradient(135deg,rgba(52,211,153,.28),rgba(16,185,129,.10));border-color:rgba(52,211,153,.38);box-shadow:0 0 44px rgba(52,211,153,.30),inset 0 1px 0 rgba(255,255,255,.15)}
+  .hero .logo.others{background:linear-gradient(135deg,rgba(167,139,250,.28),rgba(139,92,246,.10));border-color:rgba(167,139,250,.38);box-shadow:0 0 44px rgba(167,139,250,.30),inset 0 1px 0 rgba(255,255,255,.15)}
+  .hero .logo.deductions{background:linear-gradient(135deg,rgba(244,114,182,.28),rgba(219,39,119,.10));border-color:rgba(244,114,182,.38);box-shadow:0 0 44px rgba(244,114,182,.30),inset 0 1px 0 rgba(255,255,255,.15)}
+  .hero .logo.summary{background:linear-gradient(135deg,rgba(125,211,252,.30),rgba(167,139,250,.14));border-color:rgba(167,139,250,.42);box-shadow:0 0 44px rgba(167,139,250,.32),inset 0 1px 0 rgba(255,255,255,.15)}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  .hero-copy{flex:1;min-width:0}
+  .brand-name{margin:0;font-size:clamp(24px,3.4vw,32px);letter-spacing:-.03em;font-weight:750;
+    background:linear-gradient(135deg,#7dd3fc 0%,#a78bfa 60%,#f472b6 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+    line-height:1.05;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .brand-tagline{font-size:12px;font-weight:500;color:var(--muted);background:none;-webkit-text-fill-color:var(--muted);opacity:.85}
+  .tab-context{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;font-weight:600;color:var(--text)}
+  .tab-context .context-icon{font-size:16px;line-height:1}
+  .hero p.context-sub{margin:4px 0 0;color:var(--muted);font-size:13px;max-width:640px;line-height:1.5}
+  @media(max-width:600px){.hero{gap:12px}.hero .logo{width:48px;height:48px;font-size:20px;border-radius:15px}.brand-name{font-size:22px;gap:8px}.brand-tagline{font-size:11px}.tab-context{font-size:13px}.hero p.context-sub{font-size:12.5px}}
+
+  .head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn-ghost{border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);padding:8px 12px;border-radius:10px;font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .18s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+  .btn-ghost:hover{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.22)}.btn-ghost:active{transform:scale(.97)}
+  .btn-ghost .ico{font-size:13px;line-height:1}
+  .btn-ghost.save{border-color:rgba(52,211,153,.38);color:#6ee7b7}
+  .btn-ghost.save:hover{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.55)}
+  .btn-ghost.export{border-color:rgba(125,211,252,.40);color:#7dd3fc;background:linear-gradient(135deg,rgba(125,211,252,.10),rgba(167,139,250,.08))}
+  .btn-ghost.export:hover{background:linear-gradient(135deg,rgba(125,211,252,.18),rgba(167,139,250,.14));border-color:rgba(167,139,250,.55)}
+
+  .toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:1100;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+  .toast{padding:11px 18px;border-radius:12px;background:rgba(15,23,42,.96);border:1px solid rgba(255,255,255,.14);color:var(--text);font-size:13px;font-weight:550;box-shadow:0 14px 32px -8px rgba(0,0,0,.75);animation:toastIn .25s ease,toastOut .3s ease 2.6s forwards;display:flex;align-items:center;gap:9px;backdrop-filter:blur(10px);max-width:90vw}
+  .toast.ok{border-color:rgba(52,211,153,.45)}.toast.ok .dot{background:var(--good);box-shadow:0 0 8px rgba(52,211,153,.7)}
+  .toast.warn{border-color:rgba(251,191,36,.45)}.toast.warn .dot{background:var(--warn);box-shadow:0 0 8px rgba(251,191,36,.7)}
+  .toast.bad{border-color:rgba(248,113,113,.45)}.toast.bad .dot{background:var(--bad);box-shadow:0 0 8px rgba(248,113,113,.7)}
+  .toast .dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);flex:0 0 auto}
+  @keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes toastOut{to{opacity:0;transform:translateY(8px)}}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(4,7,15,.78);backdrop-filter:blur(6px);z-index:1000;display:none;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;animation:fadeIn .2s ease}
+  .modal-overlay.open{display:flex}
+  .modal{width:100%;max-width:860px;background:linear-gradient(180deg,#0e1626,#0a1220);border:1px solid rgba(255,255,255,.13);border-radius:20px;box-shadow:0 40px 90px -30px rgba(0,0,0,.9);overflow:hidden;animation:slideUp .28s cubic-bezier(.2,.9,.3,1);position:relative}
+  .modal::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(125,211,252,.7),rgba(167,139,250,.6),transparent)}
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 24px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,rgba(125,211,252,.05),rgba(167,139,250,.05))}
+  .modal-head h2{margin:0;font-size:15px;font-weight:650;display:flex;align-items:center;gap:10px;color:var(--text)}
+  .modal-head .modal-icon{font-size:18px;line-height:1}
+  .modal-head .modal-sub{font-size:11px;font-weight:500;color:var(--muted);margin-left:4px}
+  .modal-close{width:32px;height:32px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--muted);border-radius:9px;font-size:16px;cursor:pointer;display:grid;place-items:center;transition:all .15s;font-family:inherit;padding:0}
+  .modal-close:hover{color:var(--bad);border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.08)}
+  .modal-body{padding:20px 24px;max-height:64vh;overflow-y:auto}
+  .modal-body pre{margin:0;font-family:ui-monospace,'SF Mono','Menlo','Consolas',monospace;font-size:11.5px;line-height:1.6;color:var(--text);white-space:pre;overflow-x:auto}
+  .modal-foot{display:flex;gap:10px;padding:16px 24px;border-top:1px solid var(--border);background:rgba(255,255,255,.02);justify-content:flex-end;flex-wrap:wrap}
+  @media(max-width:620px){.modal-overlay{padding:16px 10px}.modal-head{padding:16px 18px}.modal-body{padding:16px 18px;max-height:60vh}.modal-body pre{font-size:10.5px}.modal-foot{padding:12px 18px}}
+
+  .global-card{margin-bottom:20px;background:linear-gradient(135deg,rgba(125,211,252,.08),rgba(167,139,250,.06) 40%,rgba(52,211,153,.05)),linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.022));border-color:rgba(167,139,250,.28);position:relative;overflow:hidden}
+  .global-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,.6),rgba(125,211,252,.5),transparent)}
+  .global-card h2{background:linear-gradient(135deg,#7dd3fc,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:12px}
+  .settings-grid{display:grid;grid-template-columns:1.5fr 1.4fr 1fr 1fr;gap:16px}
+  @media(max-width:1000px){.settings-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.settings-grid{grid-template-columns:1fr}}
+  .cycle-nav{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+  .cycle-nav button{border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--muted);padding:7px 12px;border-radius:10px;font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .18s;white-space:nowrap}
+  .cycle-nav button:hover{color:var(--text);background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.22)}.cycle-nav button:active{transform:scale(.95)}
+  .hint{font-size:10.5px;color:var(--muted);font-weight:500;opacity:.7;margin-left:4px}
+  .global-days-section{margin-top:18px;padding-top:18px;border-top:1px solid rgba(255,255,255,.08)}
+  .days-section-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+  .days-section-label{display:block;font-size:11.5px;color:var(--muted);font-weight:550}
+  .days-add{display:flex;gap:6px;align-items:center}
+  .days-add input{width:150px;padding:6px 10px;font-size:12.5px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text);outline:none;font-family:inherit;transition:border-color .18s,background .18s,box-shadow .18s}
+  .days-add input:focus{border-color:rgba(167,139,250,.6);background:rgba(167,139,250,.08);box-shadow:0 0 0 3px rgba(167,139,250,.13)}
+  .days-add .btn{padding:6px 12px;font-size:11.5px}
+  .global-days-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+  .global-day-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:11px;transition:background .18s,border-color .18s}
+  .global-day-row:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15)}
+  .global-day-row .avatar{width:26px;height:26px;font-size:11px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;font-weight:700;border:1px solid transparent}
+  .global-day-row .gd-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .global-day-row .gd-stepper{display:flex;align-items:center;gap:1px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:2px;flex:0 0 auto}
+  .global-day-row .gd-stepper input{width:38px;text-align:center;border:none;background:transparent;padding:3px 2px;font-size:12.5px;font-variant-numeric:tabular-nums;font-weight:650;border-radius:6px;color:var(--text);font-family:inherit;outline:none}
+  .global-day-row .gd-stepper input:focus{background:rgba(56,189,248,.14)}
+  .global-day-row .gd-step{width:20px;height:20px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;display:grid;place-items:center;transition:background .15s,color .15s,transform .1s;font-family:inherit;padding:0;line-height:1}
+  .global-day-row .gd-step:hover{background:rgba(56,189,248,.18);color:#7dd3fc}.global-day-row .gd-step:active{transform:scale(.9)}
+
+  .tabs{display:inline-flex;gap:6px;padding:6px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--border);margin-bottom:24px;backdrop-filter:blur(10px);flex-wrap:wrap}
+  .tab{display:inline-flex;align-items:center;gap:9px;padding:10px 18px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .22s ease;white-space:nowrap}
+  .tab:hover{color:var(--text);background:rgba(255,255,255,.05)}.tab .tab-icon{font-size:16px}
+  .tab.active{color:var(--text);background:linear-gradient(135deg,rgba(56,189,248,.22),rgba(34,211,238,.10));border-color:rgba(56,189,248,.35);box-shadow:0 0 24px -6px rgba(56,189,248,.5)}
+  .tab[data-tab="electric"].active{background:linear-gradient(135deg,rgba(251,191,36,.20),rgba(249,115,22,.08));border-color:rgba(251,191,36,.40);box-shadow:0 0 24px -6px rgba(251,191,36,.5)}
+  .tab[data-tab="rent"].active{background:linear-gradient(135deg,rgba(52,211,153,.20),rgba(16,185,129,.08));border-color:rgba(52,211,153,.40);box-shadow:0 0 24px -6px rgba(52,211,153,.5)}
+  .tab[data-tab="others"].active{background:linear-gradient(135deg,rgba(167,139,250,.20),rgba(139,92,246,.08));border-color:rgba(167,139,250,.40);box-shadow:0 0 24px -6px rgba(167,139,250,.5)}
+  .tab[data-tab="deductions"].active{background:linear-gradient(135deg,rgba(244,114,182,.20),rgba(219,39,119,.08));border-color:rgba(244,114,182,.40);box-shadow:0 0 24px -6px rgba(244,114,182,.5)}
+  .tab[data-tab="summary"].active{background:linear-gradient(135deg,rgba(125,211,252,.24),rgba(167,139,250,.14));border-color:rgba(167,139,250,.45);box-shadow:0 0 24px -6px rgba(167,139,250,.55)}
+
+  .tab-panel{display:none}.tab-panel.active{display:block;animation:fadeIn .3s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .layout{display:grid;grid-template-columns:375px minmax(0,1fr);gap:20px;align-items:start}
+  @media(max-width:880px){.layout{grid-template-columns:1fr}}
+  .left-col{display:flex;flex-direction:column;gap:20px;min-width:0}
+  .right-col{display:flex;flex-direction:column;gap:20px;min-width:0}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.022));border:1px solid var(--border);border-radius:20px;padding:22px;backdrop-filter:blur(14px);box-shadow:0 24px 55px -26px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.05)}
+  .card h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);font-weight:650;margin:0 0 18px}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .card-head h2{margin:0}
+
+  .field{margin-bottom:16px}.field:last-child{margin-bottom:0}
+  .field label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:7px;font-weight:550}
+  input[type=number],input[type=date],input[type=text],select{width:100%;padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:border-color .18s,background .18s,box-shadow .18s}
+  input:focus,select:focus{border-color:rgba(56,189,248,.6);background:rgba(56,189,248,.08);box-shadow:0 0 0 3px rgba(56,189,248,.13)}
+  .tab-panel[data-app="electric"] input:focus,.tab-panel[data-app="electric"] select:focus{border-color:rgba(251,191,36,.6);background:rgba(251,191,36,.08);box-shadow:0 0 0 3px rgba(251,191,36,.13)}
+  .tab-panel[data-app="rent"] input:focus,.tab-panel[data-app="rent"] select:focus{border-color:rgba(52,211,153,.6);background:rgba(52,211,153,.08);box-shadow:0 0 0 3px rgba(52,211,153,.13)}
+  .tab-panel[data-app="others"] input:focus,.tab-panel[data-app="others"] select:focus{border-color:rgba(167,139,250,.6);background:rgba(167,139,250,.08);box-shadow:0 0 0 3px rgba(167,139,250,.13)}
+  .tab-panel[data-app="deductions"] input:focus,.tab-panel[data-app="deductions"] select:focus{border-color:rgba(244,114,182,.6);background:rgba(244,114,182,.08);box-shadow:0 0 0 3px rgba(244,114,182,.13)}
+  input::placeholder{color:#5c6a80}
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield;appearance:textfield}
+  input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.7) sepia(.3) saturate(3) hue-rotate(170deg);cursor:pointer;opacity:.8}
+  .amount-group{display:flex;gap:9px}
+  .amount-group select{width:84px;flex:0 0 auto;text-align:center;padding-left:6px;padding-right:6px}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .note{font-size:12px;color:var(--muted);margin:12px 0 0;line-height:1.5}
+  .note.warn{color:var(--warn)}.note strong{color:var(--text);font-weight:650}
+
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+  .stat{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:12px 14px;min-width:0}
+  .stat span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);margin-bottom:5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stat strong{font-size:19px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .stat.accent strong{background:linear-gradient(135deg,#7dd3fc,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tab-panel[data-app="electric"] .stat.accent strong{background:linear-gradient(135deg,#fcd34d,#fb923c);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tab-panel[data-app="rent"] .stat.accent strong{background:linear-gradient(135deg,#6ee7b7,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tab-panel[data-app="others"] .stat.accent strong{background:linear-gradient(135deg,#c4b5fd,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tab-panel[data-app="deductions"] .stat.accent strong{background:linear-gradient(135deg,#f9a8d4,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tab-panel[data-app="summary"] .stat.accent strong{background:linear-gradient(135deg,#7dd3fc,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  .avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13.5px;border:1px solid transparent;user-select:none;transition:background .25s,color .25s,border-color .25s}
+  .stepper{display:flex;align-items:center;gap:1px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:11px;padding:3px}
+  .stepper input{width:46px;text-align:center;border:none;background:transparent;padding:5px 2px;font-size:14px;font-variant-numeric:tabular-nums;font-weight:600;border-radius:8px}
+  .stepper input:focus{background:rgba(56,189,248,.12);box-shadow:none}
+  .tab-panel[data-app="electric"] .stepper input:focus{background:rgba(251,191,36,.12)}
+  .tab-panel[data-app="rent"] .stepper input:focus{background:rgba(52,211,153,.12)}
+  .tab-panel[data-app="others"] .stepper input:focus{background:rgba(167,139,250,.12)}
+  .step{width:26px;height:26px;flex:0 0 auto;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:16px;line-height:1;cursor:pointer;display:grid;place-items:center;transition:background .15s,color .15s,transform .1s;font-family:inherit}
+  .step:hover{background:rgba(56,189,248,.18);color:#7dd3fc}
+  .tab-panel[data-app="electric"] .step:hover{background:rgba(251,191,36,.18);color:#fcd34d}
+  .tab-panel[data-app="rent"] .step:hover{background:rgba(52,211,153,.18);color:#6ee7b7}
+  .tab-panel[data-app="others"] .step:hover{background:rgba(167,139,250,.18);color:#c4b5fd}
+  .step:active{transform:scale(.9)}
+  .remove{width:22px;height:22px;border:none;background:transparent;color:#4d5a6e;font-size:17px;line-height:1;border-radius:6px;cursor:pointer;display:grid;place-items:center;opacity:0;transition:opacity .18s,color .18s,background .18s;font-family:inherit;padding:0}
+  .person:hover .remove{opacity:1}.remove:hover{color:var(--bad);background:rgba(248,113,113,.13)}
+  .bar{height:4px;border-radius:99px;background:rgba(255,255,255,.07);margin-top:9px;overflow:hidden}
+  .bar > i{display:block;height:100%;width:0;border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1),background .3s}
+
+  /* ===== WATER/OTHER basic member rows ===== */
+  .person{background:rgba(255,255,255,.033);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:10px 12px;transition:background .2s,border-color .2s,box-shadow .2s}
+  .person:hover{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.12)}
+  .person-main{display:grid;grid-template-columns:34px minmax(0,1fr) auto 108px 22px;gap:10px;align-items:center}
+  .person.rent .person-main{grid-template-columns:34px minmax(0,1fr) auto 22px}
+  .pname{background:transparent;border:1px solid transparent;padding:8px 10px;font-weight:550;font-size:14.5px;border-radius:10px;min-width:0}
+  .pname:hover{background:rgba(255,255,255,.05)}
+  .pname:focus{background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.45);box-shadow:none}
+  .tab-panel[data-app="rent"] .pname:focus{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.45)}
+  .tab-panel[data-app="others"] .pname:focus{background:rgba(167,139,250,.08);border-color:rgba(167,139,250,.45)}
+  .share-amount{text-align:right;font-weight:650;font-variant-numeric:tabular-nums;font-size:15px;color:var(--muted);transition:color .25s;white-space:nowrap;line-height:1.2}
+  .share-amount .wt{display:block;font-size:10px;font-weight:600;color:var(--muted);margin-top:2px;opacity:.85}
+  .share-amount .wt:empty{display:none}
+  .person.others .share-amount{font-size:15px}
+  .person.others .share-amount .meta{display:block;font-size:10.5px;font-weight:600;color:var(--muted);margin-top:3px}
+  .person.others .share-amount .meta .net-pos{color:var(--good);font-weight:700}
+  .person.others .share-amount .meta .net-neg{color:var(--bad);font-weight:700}
+  .people{display:flex;flex-direction:column;gap:10px}
+
+  /* ===== NEW: MERALCO ROOM-BASED UI ===== */
+  .meralco-list{display:flex;flex-direction:column;gap:16px}
+
+  .section-block{display:flex;flex-direction:column;gap:10px}
+  .section-block-label{display:flex;align-items:center;gap:8px;font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);font-weight:650}
+  .section-block-label .sl-count{font-size:10px;padding:2px 7px;background:rgba(255,255,255,.05);border-radius:6px;font-weight:700;letter-spacing:.02em;text-transform:none;color:var(--muted)}
+  .section-block-label.rooms-label{color:var(--ac)}
+  .section-block-label.rooms-label .sl-count{background:rgba(251,191,36,.12);color:var(--ac)}
+  .section-block-label .sl-hint{margin-left:auto;font-size:10.5px;color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0;opacity:.75}
+
+  .unassigned-rows{display:flex;flex-direction:column;gap:8px}
+
+  .mr-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto 88px 110px 22px;gap:10px;align-items:center;padding:8px 10px;background:rgba(255,255,255,.033);border:1px solid rgba(255,255,255,.06);border-radius:12px;transition:background .18s,border-color .18s}
+  .mr-row:hover{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.12)}
+  .mr-row .mr-name{font-weight:550;font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;padding:0 4px}
+  .mr-row .mr-weight{text-align:right;font-size:11.5px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+  .mr-row .mr-amount{text-align:right;font-size:14.5px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap;transition:color .2s}
+  .mr-row .remove{opacity:0}
+  .mr-row:hover .remove{opacity:1}
+
+  @media(max-width:900px){
+    .mr-row{grid-template-columns:34px minmax(0,1fr) auto 22px;grid-template-areas:"av nm nm rm" "st st sh sh";row-gap:8px}
+    .mr-row .avatar{grid-area:av}
+    .mr-row .mr-name{grid-area:nm}
+    .mr-row .stepper{grid-area:st;justify-self:start}
+    .mr-row .mr-weight{grid-area:sh;display:none}
+    .mr-row .mr-amount{grid-area:sh;text-align:left}
+    .mr-row .remove{grid-area:rm;opacity:1}
+  }
+
+  /* Room card */
+  .room-card{
+    background:linear-gradient(180deg,rgba(251,191,36,.04),rgba(251,191,36,.015));
+    border:1px solid rgba(251,191,36,.28);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 14px 34px -22px rgba(0,0,0,.65);
+  }
+  .room-card.no-ac{
+    border-color:rgba(255,255,255,.12);
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));
+  }
+  .room-header{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    padding:10px 12px;
+    background:linear-gradient(90deg,rgba(251,191,36,.10),rgba(251,191,36,.04));
+    border-bottom:1px solid rgba(251,191,36,.20);
+  }
+  .room-card.no-ac .room-header{
+    background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+    border-bottom-color:rgba(255,255,255,.08);
+  }
+  .rh-icon{font-size:15px;line-height:1;flex:0 0 auto}
+  .rh-name{
+    flex:0 1 130px;min-width:80px;
+    padding:6px 10px;font-size:13.5px;font-weight:700;
+    color:var(--ac);
+    background:rgba(0,0,0,.20);
+    border:1px solid rgba(251,191,36,.32);
+    border-radius:8px;outline:none;font-family:inherit;
+    transition:background .18s,border-color .18s;
+  }
+  .room-card.no-ac .rh-name{color:var(--text);background:rgba(255,255,255,.06);border-color:var(--border)}
+  .rh-name:focus{background:rgba(251,191,36,.14);border-color:rgba(251,191,36,.65);box-shadow:0 0 0 2px rgba(251,191,36,.15)}
+
+  .rh-type{
+    display:inline-flex;
+    border-radius:9px;
+    border:1px solid rgba(251,191,36,.30);
+    background:rgba(0,0,0,.18);
+    overflow:hidden;
+    flex:0 0 auto;
+  }
+  .rh-type button{
+    padding:5px 11px;font-size:11px;font-weight:700;letter-spacing:.04em;
+    border:none;background:transparent;color:var(--muted);cursor:pointer;
+    font-family:inherit;transition:all .18s;
+  }
+  .rh-type button:hover{color:var(--text)}
+  .rh-type button.is-active{
+    background:linear-gradient(135deg,rgba(251,191,36,.85),rgba(249,115,22,.65));
+    color:#1a1005;
+  }
+
+  .rh-settings{
+    margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  }
+  .rh-ac-toggle{
+    display:inline-flex;align-items:center;gap:5px;cursor:pointer;user-select:none;
+    padding:4px 9px;border-radius:999px;
+    border:1px solid var(--border);background:rgba(255,255,255,.04);
+    font-size:10.5px;font-weight:700;letter-spacing:.05em;color:var(--muted);
+    transition:all .18s;
+  }
+  .rh-ac-toggle input{width:auto;padding:0;accent-color:var(--ac);cursor:pointer;margin:0}
+  .rh-ac-toggle.on{
+    background:rgba(251,191,36,.14);border-color:rgba(251,191,36,.5);color:var(--ac);
+    box-shadow:0 0 0 3px rgba(251,191,36,.08);
+  }
+  .rh-mult-field{
+    display:inline-flex;align-items:center;gap:2px;
+    padding:3px 7px;
+    background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;
+    transition:all .18s;
+  }
+  .rh-mult-field.on{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.42)}
+  .rh-mult-label{font-size:11px;font-weight:700;color:var(--muted);line-height:1}
+  .rh-mult-field.on .rh-mult-label{color:var(--ac)}
+  .rh-mult-field input{
+    width:38px;padding:3px 4px;font-size:12.5px;font-weight:700;text-align:center;
+    background:transparent;border:none;color:var(--muted);
+    font-variant-numeric:tabular-nums;border-radius:5px;outline:none;font-family:inherit;
+  }
+  .rh-mult-field.on input{color:var(--ac)}
+  .rh-mult-field input:focus{background:rgba(251,191,36,.16)}
+  .rh-mult-field input::placeholder{color:#4a566b}
+
+  .rh-mode{
+    width:auto;padding:5px 22px 5px 9px;font-size:11.5px;font-weight:600;
+    border-radius:8px;background:rgba(255,255,255,.05);
+    border:1px solid var(--border);color:var(--text);font-family:inherit;
+  }
+  .rh-mode:focus{border-color:rgba(251,191,36,.55);background:rgba(251,191,36,.08);box-shadow:none}
+
+  .rh-units{
+    font-size:10.5px;font-weight:700;color:var(--ac);
+    padding:4px 9px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.30);
+    border-radius:6px;letter-spacing:.02em;white-space:nowrap;
+  }
+  .room-card.no-ac .rh-units{
+    color:var(--muted);background:rgba(255,255,255,.05);border-color:var(--border);
+  }
+
+  .rh-remove{
+    width:26px;height:26px;border:none;background:transparent;color:var(--muted);
+    font-size:16px;cursor:pointer;border-radius:6px;display:grid;place-items:center;
+    transition:all .15s;font-family:inherit;padding:0;flex:0 0 auto;
+  }
+  .rh-remove:hover{color:var(--bad);background:rgba(248,113,113,.13)}
+
+  .room-body{padding:12px;display:flex;flex-direction:column;gap:10px}
+  .room-card.no-ac .room-body{background:rgba(255,255,255,.01)}
+
+  .rs-chips{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  .rs-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.02em;margin-right:4px}
+
+  .chip{
+    padding:4px 11px;border-radius:999px;border:1px solid var(--border);
+    background:rgba(255,255,255,.03);color:var(--muted);
+    font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;
+    transition:all .18s;white-space:nowrap;
+  }
+  .chip:hover{border-color:rgba(255,255,255,.2);color:var(--text)}
+  .chip.on{
+    background:rgba(251,191,36,.14);border-color:rgba(251,191,36,.5);color:var(--ac);
+    box-shadow:0 0 0 2px rgba(251,191,36,.08);
+  }
+
+  .room-members-rows{display:flex;flex-direction:column;gap:8px}
+
+  .rs-solo-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto 88px 110px;
+    gap:10px;align-items:center;
+    padding:8px 10px;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:11px;
+  }
+  .rs-solo-row select{
+    padding:7px 10px;font-size:13px;font-weight:600;
+    border-radius:8px;background:rgba(255,255,255,.05);
+    border:1px solid var(--border);color:var(--text);
+  }
+  .rs-solo-row .mr-weight{text-align:right;font-size:11.5px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+  .rs-solo-row .mr-amount{text-align:right;font-size:14.5px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  @media(max-width:700px){
+    .rs-solo-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"sel stepper" "amount amount";row-gap:8px}
+    .rs-solo-row select{grid-area:sel}
+    .rs-solo-row .stepper{grid-area:stepper}
+    .rs-solo-row .mr-weight{display:none}
+    .rs-solo-row .mr-amount{grid-area:amount;text-align:left}
+  }
+
+  .empty-rooms{
+    padding:16px;text-align:center;font-size:12px;color:var(--muted);
+    background:rgba(255,255,255,.02);border:1px dashed rgba(251,191,36,.25);
+    border-radius:12px;line-height:1.5;
+  }
+  .empty-rooms strong{color:var(--text);font-weight:650}
+
+  .rooms-footer{display:flex;flex-direction:column;gap:8px}
+  .add-room-btn{
+    width:100%;padding:10px 14px;font-size:12.5px;font-weight:650;
+    border-radius:11px;border:1px dashed rgba(251,191,36,.42);
+    background:rgba(251,191,36,.04);color:var(--ac);
+    cursor:pointer;font-family:inherit;transition:all .15s;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .add-room-btn:hover{background:rgba(251,191,36,.12);border-style:solid;border-color:rgba(251,191,36,.6)}
+  .add-room-btn.warn{border-color:rgba(251,191,36,.6);background:rgba(251,191,36,.10);color:#fcd34d}
+  .add-room-btn.warn:hover{background:rgba(251,191,36,.18)}
+
+  .room-limit-hint{
+    font-size:10.5px;color:var(--muted);text-align:center;opacity:.75;line-height:1.4;
+  }
+  .room-limit-hint.warn{color:#fcd34d;opacity:.95}
+
+  /* Buttons */
+  .btn{border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);padding:9px 14px;border-radius:11px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .18s,border-color .18s,transform .1s,filter .18s;white-space:nowrap}
+  .btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)}.btn:active{transform:scale(.97)}
+  .btn.primary{background:linear-gradient(135deg,rgba(56,189,248,.95),rgba(34,211,238,.8));border-color:transparent;color:#04121c}
+  .btn.primary:hover{filter:brightness(1.12)}
+  .tab-panel[data-app="electric"] .btn.primary{background:linear-gradient(135deg,rgba(251,191,36,.95),rgba(249,115,22,.85))}
+  .tab-panel[data-app="rent"] .btn.primary{background:linear-gradient(135deg,rgba(52,211,153,.95),rgba(16,185,129,.85))}
+  .tab-panel[data-app="others"] .btn.primary{background:linear-gradient(135deg,rgba(167,139,250,.95),rgba(139,92,246,.85))}
+  .tab-panel[data-app="deductions"] .btn.primary{background:linear-gradient(135deg,rgba(244,114,182,.95),rgba(219,39,119,.85))}
+  .tab-panel[data-app="summary"] .btn.primary{background:linear-gradient(135deg,rgba(125,211,252,.95),rgba(167,139,250,.85))}
+  .btn.reset-btn{border-color:rgba(248,113,113,.35);color:#fca5a5;background:rgba(248,113,113,.06)}
+  .btn.reset-btn:hover{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.55);color:#fecaca}
+
+  .list-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .list-actions select.mini-currency{width:74px;padding:9px 10px;font-size:13px;font-weight:600;text-align:center;text-align-last:center;border-radius:11px;flex:0 0 auto}
+  @media(max-width:620px){.card-head{flex-direction:column;align-items:flex-start}}
+
+  .summary-card{margin-top:0}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+  .status{margin:16px 0 0;font-size:13px;line-height:1.55;padding:12px 15px;border-radius:13px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--muted);transition:color .2s,background .2s,border-color .2s}
+  .status.ok{color:#a7f3d0;background:rgba(52,211,153,.09);border-color:rgba(52,211,153,.28)}
+  .status.warn{color:#fde68a;background:rgba(251,191,36,.09);border-color:rgba(251,191,36,.28)}
+  .status.bad{color:#fecaca;background:rgba(248,113,113,.09);border-color:rgba(248,113,113,.28)}
+
+  /* Others tab */
+  .expenses{display:flex;flex-direction:column;gap:10px}
+  .expense{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px;transition:background .2s,border-color .2s}
+  .expense:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
+  .expense.unallocated{border-color:rgba(248,113,113,.4);box-shadow:0 0 0 3px rgba(248,113,113,.07)}
+  .expense-top{display:grid;grid-template-columns:minmax(0,1fr) 110px 22px;gap:8px;align-items:center;margin-bottom:10px}
+  .expense-top .exp-desc,.expense-top .exp-amt{padding:9px 11px;font-size:14px;border-radius:10px}
+  .expense-top .exp-amt{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .exp-remove{opacity:.5;font-size:17px}.exp-remove:hover{opacity:1}
+  .expense-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:10px;font-size:11.5px;color:var(--muted)}
+  .exp-paidby{display:flex;align-items:center;gap:6px;white-space:nowrap;font-weight:550}
+  .exp-paidby-sel{width:auto;padding:6px 26px 6px 9px;font-size:12.5px;font-weight:600;border-radius:9px}
+  .exp-participants{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap}
+  .exp-label{font-size:11px;color:var(--muted);padding-top:5px;white-space:nowrap;font-weight:550}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;flex:1;min-width:0}
+  .tab-panel[data-app="others"] .chip.on{background:rgba(167,139,250,.15);border-color:rgba(167,139,250,.45);color:#c4b5fd}
+
+  /* Deductions */
+  .deductions-list{display:flex;flex-direction:column;gap:10px}
+  .deduction{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.8fr) 22px;gap:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px;transition:background .2s,border-color .2s}
+  .deduction:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
+  .deduction select,.deduction input{padding:9px 11px;font-size:13.5px;border-radius:10px}
+  .ded-member{grid-column:1;grid-row:1}.ded-desc{grid-column:2;grid-row:1}
+  .ded-remove{grid-column:3;grid-row:1;opacity:.5;font-size:17px;align-self:center}.ded-remove:hover{opacity:1}
+  .ded-date{grid-column:1;grid-row:2}.ded-amt{grid-column:2 / 4;grid-row:2;text-align:right;font-variant-numeric:tabular-nums;font-weight:650}
+  .ded-amt::placeholder{text-align:right}
+  .preset-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 12px;background:rgba(244,114,182,.06);border:1px solid rgba(244,114,182,.20);border-radius:11px;margin-bottom:12px}
+  .preset-row .preset-label{font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-right:4px}
+  .preset-btn{padding:5px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--text);font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .18s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+  .preset-btn:hover{background:rgba(244,114,182,.14);border-color:rgba(244,114,182,.40)}.preset-btn:active{transform:scale(.96)}
+  .preset-btn .p-ico{font-size:12px;line-height:1}
+  @media(max-width:560px){.deduction{grid-template-columns:minmax(0,1fr) 22px;grid-template-areas:"member remove" "desc desc" "date amount"}
+    .ded-member{grid-area:member}.ded-remove{grid-area:remove}.ded-desc{grid-area:desc}.ded-date{grid-area:date}.ded-amt{grid-area:amount}}
+
+  .member-deductions{display:flex;flex-direction:column;gap:12px}
+  .member-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px;transition:background .2s,border-color .2s}
+  .member-card:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
+  .member-card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .member-card-head .avatar{width:30px;height:30px;font-size:12px;flex:0 0 auto}
+  .member-card-name{flex:1;font-weight:650;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .member-card-total{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;color:var(--deduct);white-space:nowrap}
+  .member-card-items{display:flex;flex-direction:column;gap:6px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.08)}
+  .member-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,.025);border-radius:9px;font-size:12.5px}
+  .member-item .mi-left{flex:1;min-width:0}
+  .member-item .mi-desc{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .member-item .mi-date{font-size:11px;color:var(--muted);margin-top:2px}
+  .member-item .mi-amount{font-weight:650;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}
+  .auto-badge{display:inline-block;padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:rgba(167,139,250,.20);color:#c4b5fd;border-radius:5px;margin-left:6px;vertical-align:middle;border:1px solid rgba(167,139,250,.35)}
+  .auto-tracked-note{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:11px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.24);font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.4}
+  .auto-tracked-note .dot{width:8px;height:8px;border-radius:50%;background:var(--other);flex:0 0 auto;box-shadow:0 0 8px rgba(167,139,250,.6)}
+  .auto-tracked-note strong{color:var(--text);font-weight:650}
+  .empty-state{padding:24px 16px;text-align:center;color:var(--muted);font-size:12.5px;border:1px dashed var(--border);border-radius:12px;background:rgba(255,255,255,.015)}
+
+  .settlement{margin-top:16px}
+  .settlement h3{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);font-weight:650;margin:0 0 10px}
+  .settlement-list{display:flex;flex-direction:column;gap:6px}
+  .settlement-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:11px;background:rgba(255,255,255,.03);border:1px solid var(--border);font-size:12.5px;transition:background .18s}
+  .settlement-item:hover{background:rgba(255,255,255,.06)}
+  .settlement-item .from{color:#fca5a5;font-weight:600}
+  .settlement-item .to{color:#86efac;font-weight:600}
+  .settlement-item .arrow{color:var(--muted);font-size:14px}
+  .settlement-item .amt{margin-left:auto;font-weight:650;font-variant-numeric:tabular-nums;color:var(--text)}
+
+  /* Summary */
+  .grand-total{font-size:clamp(30px,5vw,38px);font-weight:700;letter-spacing:-.025em;font-variant-numeric:tabular-nums;line-height:1.1;margin-bottom:6px;background:linear-gradient(135deg,#7dd3fc 0%,#a78bfa 50%,#f472b6 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .grand-sub{margin:0 0 16px;font-size:12.5px;color:var(--muted)}
+  .category-list{display:flex;flex-direction:column;gap:8px}
+  .category-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);transition:background .18s}
+  .category-item:hover{background:rgba(255,255,255,.06)}
+  .category-item .cat-icon{font-size:16px;flex:0 0 auto;line-height:1}
+  .category-item .cat-label{font-size:12.5px;font-weight:600;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .category-item .cat-value{font-size:13.5px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--text)}
+  .category-item .cat-value.neg{color:var(--deduct)}
+  .breakdown-table{width:100%}
+  .breakdown-inner{display:flex;flex-direction:column;gap:8px;width:100%}
+  .breakdown-grid{display:grid;grid-template-columns:minmax(110px,1.4fr) repeat(5,minmax(60px,1fr)) minmax(86px,1.1fr);gap:6px;align-items:center}
+  .breakdown-header{padding:0 10px 10px;border-bottom:1px solid var(--border);font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:650}
+  .breakdown-header > *{text-align:right}.breakdown-header > *:first-child{text-align:left}
+  .breakdown-row{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:14px;background:rgba(255,255,255,.033);border:1px solid rgba(255,255,255,.06);transition:background .2s,border-color .2s}
+  .breakdown-row:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
+  .breakdown-name{display:flex;align-items:center;gap:8px;min-width:0}
+  .breakdown-name .avatar{width:28px;height:28px;font-size:11.5px;flex:0 0 auto}
+  .breakdown-name .name{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .breakdown-row .cell{text-align:right;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--text);font-weight:550;letter-spacing:-.01em}
+  .breakdown-row .cell.zero{color:rgba(139,154,179,.45);font-weight:500}
+  .breakdown-row .cell.neg{color:var(--deduct);font-weight:650}
+  .breakdown-row .total-cell{text-align:right;font-weight:700;font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--text)}
+  .breakdown-bar{height:3px;border-radius:99px;background:rgba(255,255,255,.06);overflow:hidden}
+  .breakdown-bar > i{display:block;height:100%;border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+  .breakdown-footer{padding:12px 10px;margin-top:6px;border-top:1px solid var(--border);font-weight:650;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .breakdown-footer > *:first-child{text-align:left}
+  .breakdown-footer .cell{text-align:right;font-variant-numeric:tabular-nums;color:var(--text);font-weight:650;font-size:12px;letter-spacing:-.01em;text-transform:none;white-space:nowrap}
+  .breakdown-footer .cell.zero{color:rgba(139,154,179,.5)}
+  .breakdown-footer .cell.neg{color:var(--deduct)}
+  .breakdown-footer .total-cell{text-align:right;font-size:14px;color:var(--text);letter-spacing:-.01em;text-transform:none;font-weight:700;white-space:nowrap}
+  .breakdown-empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:14px}
+  ::selection{background:rgba(56,189,248,.35)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hero">
+    <div class="logo" id="heroLogo">H</div>
+    <div class="hero-copy">
+      <h1 class="brand-name">Hatian <span class="brand-tagline">Fair share for every housemate</span></h1>
+      <div class="tab-context"><span class="context-icon" id="heroIcon">💧</span><span class="context-title" id="heroTitle">Water Bill Splitter</span></div>
+      <p class="context-sub" id="heroSub">Split the water bill fairly — everyone pays for the days they actually stayed.</p>
+    </div>
+  </header>
+
+  <section class="card global-card">
+    <div class="card-head">
+      <h2>🏠 Household setup</h2>
+      <div class="head-actions">
+        <button type="button" class="btn-ghost save" id="saveBtn"><span class="ico">💾</span> Save</button>
+        <button type="button" class="btn-ghost export" id="exportBtn"><span class="ico">📤</span> Export breakdown</button>
+        <div class="cycle-nav">
+          <button type="button" data-cycle="-1">◀ Prev</button>
+          <button type="button" data-cycle="0">Now</button>
+          <button type="button" data-cycle="1">Next ▶</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-grid">
+      <div class="field">
+        <label>Billing period <span class="hint">(every 15th → 14th)</span></label>
+        <div class="field-row"><input type="date" id="globalStart"><input type="date" id="globalEnd"></div>
+        <p class="note" id="globalPeriodNote"></p>
+      </div>
+      <div class="field">
+        <label>Total water bill</label>
+        <div class="amount-group">
+          <select id="globalCurrency"><option>₱</option><option>$</option><option>€</option><option>£</option><option>₹</option><option>¥</option><option>R$</option></select>
+          <input type="number" id="globalWater" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+        </div>
+      </div>
+      <div class="field"><label>Total Meralco bill</label><input type="number" id="globalMeralco" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+      <div class="field"><label>House rent</label><input type="number" id="globalRent" min="0" step="0.01" inputmode="decimal" placeholder="14000"></div>
+    </div>
+    <div class="global-days-section">
+      <div class="days-section-header">
+        <label class="days-section-label">Days stayed per member <span class="hint">— syncs with Water &amp; Meralco tabs</span></label>
+        <div class="days-add">
+          <input type="text" id="newMemberName" placeholder="New member name" maxlength="20">
+          <button type="button" id="addMemberBtn" class="btn">+ Add member</button>
+        </div>
+      </div>
+      <div id="globalDaysGrid" class="global-days-grid"></div>
+    </div>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="water"><span class="tab-icon">💧</span> Water Bill</button>
+    <button class="tab" data-tab="electric"><span class="tab-icon">⚡</span> Meralco Bill</button>
+    <button class="tab" data-tab="rent"><span class="tab-icon">🏠</span> House Rent</button>
+    <button class="tab" data-tab="others"><span class="tab-icon">📋</span> Others</button>
+    <button class="tab" data-tab="deductions"><span class="tab-icon">💸</span> Deductions</button>
+    <button class="tab" data-tab="summary"><span class="tab-icon">📊</span> Summary</button>
+  </div>
+
+  <section class="tab-panel active" data-app="water" id="panel-water" role="tabpanel">
+    <div class="layout">
+      <div class="left-col">
+        <section class="card">
+          <h2>Bill details</h2>
+          <div class="field"><label>Total bill amount</label>
+            <div class="amount-group">
+              <select data-role="currency"><option>₱</option><option>$</option><option>€</option><option>£</option><option>₹</option><option>¥</option><option>R$</option></select>
+              <input type="number" data-role="bill" value="0" min="0" step="0.01" inputmode="decimal">
+            </div>
+          </div>
+          <div class="field"><label>Billing period covered</label>
+            <div class="field-row"><input type="date" data-role="start"><input type="date" data-role="end"></div>
+            <p class="note" data-role="periodNote"></p>
+          </div>
+          <div class="stats">
+            <div class="stat"><span>Total days</span><strong data-role="totalDays">—</strong></div>
+            <div class="stat accent"><span>Daily rate</span><strong data-role="dailyRate">—</strong></div>
+          </div>
+        </section>
+        <section class="card summary-card">
+          <div class="card-head"><h2>Summary</h2><button class="btn primary" data-role="copySummary" type="button">Copy breakdown</button></div>
+          <div class="summary-grid">
+            <div class="stat"><span>Total bill</span><strong data-role="sumBill">—</strong></div>
+            <div class="stat"><span>Allocated</span><strong data-role="sumAllocated">—</strong></div>
+            <div class="stat"><span>Effective rate / stay-day</span><strong data-role="sumEffective">—</strong></div>
+            <div class="stat accent"><span>Base daily rate</span><strong data-role="sumRate">—</strong></div>
+          </div>
+          <p class="status" data-role="status"></p>
+        </section>
+      </div>
+      <section class="card">
+        <div class="card-head"><h2>House members</h2>
+          <div class="list-actions">
+            <button class="btn" data-role="evenSplit" type="button">Even split</button>
+            <button class="btn" data-role="addPerson" type="button">+ Add</button>
+          </div>
+        </div>
+        <div class="people" data-role="list"></div>
+      </section>
+    </div>
+  </section>
+
+  <section class="tab-panel" data-app="electric" id="panel-electric" role="tabpanel">
+    <div class="layout">
+      <div class="left-col">
+        <section class="card">
+          <h2>Meralco bill details</h2>
+          <div class="field"><label>Total bill amount</label>
+            <div class="amount-group">
+              <select data-role="currency"><option>₱</option><option>$</option><option>€</option><option>£</option><option>₹</option><option>¥</option><option>R$</option></select>
+              <input type="number" data-role="bill" value="0" min="0" step="0.01" inputmode="decimal">
+            </div>
+          </div>
+          <div class="field"><label>Billing period covered</label>
+            <div class="field-row"><input type="date" data-role="start"><input type="date" data-role="end"></div>
+            <p class="note" data-role="periodNote"></p>
+          </div>
+          <p class="note">
+            <strong>How it works:</strong> Group members into rooms. Each room has its own AC setting.
+            <strong>Together</strong> mode shares AC cost by actual overlap (fair when dates match).
+            <strong>Apart</strong> mode each pays their own days (fair when dates differ).
+          </p>
+          <div class="stats">
+            <div class="stat"><span>Total days</span><strong data-role="totalDays">—</strong></div>
+            <div class="stat accent"><span>Base daily rate</span><strong data-role="dailyRate">—</strong></div>
+          </div>
+        </section>
+        <section class="card summary-card">
+          <div class="card-head"><h2>Summary</h2><button class="btn primary" data-role="copySummary" type="button">Copy breakdown</button></div>
+          <div class="summary-grid">
+            <div class="stat"><span>Total bill</span><strong data-role="sumBill">—</strong></div>
+            <div class="stat"><span>Allocated</span><strong data-role="sumAllocated">—</strong></div>
+            <div class="stat"><span>Total weighted days</span><strong data-role="sumWeight">—</strong></div>
+            <div class="stat"><span>Effective rate / weighted-day</span><strong data-role="sumEffective">—</strong></div>
+            <div class="stat accent"><span>Base daily rate</span><strong data-role="sumRate">—</strong></div>
+          </div>
+          <p class="status" data-role="status"></p>
+        </section>
+      </div>
+      <section class="card">
+        <div class="card-head"><h2>House members &amp; rooms</h2>
+          <div class="list-actions">
+            <button class="btn reset-btn" data-role="resetMembers" type="button" title="Reset all days to 0">↺ Reset</button>
+            <button class="btn" data-role="evenSplit" type="button">Even split</button>
+            <button class="btn" data-role="addPerson" type="button">+ Add member</button>
+            <button class="btn" data-role="addRoom" type="button">+ Add room</button>
+          </div>
+        </div>
+        <div class="meralco-list" data-role="list"></div>
+      </section>
+    </div>
+  </section>
+
+  <section class="tab-panel" data-app="rent" id="panel-rent" role="tabpanel">
+    <div class="layout">
+      <div class="left-col">
+        <section class="card">
+          <h2>Rent details</h2>
+          <div class="field"><label>Monthly rent</label>
+            <div class="amount-group">
+              <select data-role="currency"><option>₱</option><option>$</option><option>€</option><option>£</option><option>₹</option><option>¥</option><option>R$</option></select>
+              <input type="number" data-role="bill" value="14000" min="0" step="0.01" inputmode="decimal">
+            </div>
+          </div>
+          <div class="field"><label>Rent period (optional)</label>
+            <div class="field-row"><input type="date" data-role="start"><input type="date" data-role="end"></div>
+            <p class="note" data-role="periodNote"></p>
+          </div>
+          <div class="stats">
+            <div class="stat"><span>Total rent</span><strong data-role="statTotal">—</strong></div>
+            <div class="stat accent"><span>Assigned</span><strong data-role="statAssigned">—</strong></div>
+          </div>
+        </section>
+        <section class="card summary-card">
+          <div class="card-head"><h2>Summary</h2><button class="btn primary" data-role="copySummary" type="button">Copy breakdown</button></div>
+          <div class="summary-grid">
+            <div class="stat"><span>Total rent</span><strong data-role="sumBill">—</strong></div>
+            <div class="stat"><span>Assigned</span><strong data-role="sumAllocated">—</strong></div>
+            <div class="stat"><span>Difference</span><strong data-role="sumDifference">—</strong></div>
+            <div class="stat accent"><span>Members</span><strong data-role="sumMembers">—</strong></div>
+          </div>
+          <p class="status" data-role="status"></p>
+        </section>
+      </div>
+      <section class="card">
+        <div class="card-head"><h2>House members</h2>
+          <div class="list-actions">
+            <button class="btn" data-role="evenSplit" type="button">Distribute evenly</button>
+            <button class="btn" data-role="addPerson" type="button">+ Add</button>
+          </div>
+        </div>
+        <div class="people" data-role="list"></div>
+      </section>
+    </div>
+  </section>
+
+  <section class="tab-panel" data-app="others" id="panel-others" role="tabpanel">
+    <div class="layout">
+      <div class="left-col">
+        <section class="card">
+          <h2>Billing period</h2>
+          <div class="field-row"><input type="date" data-role="start"><input type="date" data-role="end"></div>
+          <p class="note" data-role="periodNote"></p>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Expenses</h2>
+            <div class="list-actions">
+              <select data-role="currency" class="mini-currency"><option>₱</option><option>$</option><option>€</option><option>£</option><option>₹</option><option>¥</option><option>R$</option></select>
+              <button class="btn" data-role="addExpense" type="button">+ Add expense</button>
+            </div>
+          </div>
+          <div class="expenses" data-role="expenseList"></div>
+          <p class="note" data-role="expenseTotal"></p>
+        </section>
+        <section class="card summary-card">
+          <div class="card-head"><h2>Summary</h2><button class="btn primary" data-role="copySummary" type="button">Copy breakdown</button></div>
+          <div class="summary-grid">
+            <div class="stat"><span>Total expenses</span><strong data-role="sumTotal">—</strong></div>
+            <div class="stat"><span>Allocated</span><strong data-role="sumAllocated">—</strong></div>
+            <div class="stat"><span>Expense items</span><strong data-role="sumItems">—</strong></div>
+            <div class="stat"><span>Members</span><strong data-role="sumMembers">—</strong></div>
+          </div>
+          <p class="status" data-role="status"></p>
+          <div class="settlement" data-role="settlement"></div>
+        </section>
+      </div>
+      <section class="card">
+        <div class="card-head"><h2>House members</h2>
+          <div class="list-actions"><button class="btn" data-role="addPerson" type="button">+ Add</button></div>
+        </div>
+        <div class="people" data-role="list"></div>
+      </section>
+    </div>
+  </section>
+
+  <section class="tab-panel" data-app="deductions" id="panel-deductions" role="tabpanel">
+    <div class="layout">
+      <div class="left-col">
+        <section class="card">
+          <h2>Billing period</h2>
+          <div class="field-row"><input type="date" data-role="start"><input type="date" data-role="end"></div>
+          <p class="note" data-role="periodNote"></p>
+        </section>
+        <section class="card summary-card">
+          <div class="card-head"><h2>Summary</h2><button class="btn primary" data-role="copySummary" type="button">Copy breakdown</button></div>
+          <div class="summary-grid">
+            <div class="stat"><span>Total deductions</span><strong data-role="sumTotal">—</strong></div>
+            <div class="stat"><span>Members with deduction</span><strong data-role="sumWith">—</strong></div>
+            <div class="stat"><span>Entries</span><strong data-role="sumEntries">—</strong></div>
+            <div class="stat accent"><span>Avg / member</span><strong data-role="sumAvg">—</strong></div>
+          </div>
+          <p class="status" data-role="status"></p>
+        </section>
+      </div>
+      <div class="right-col">
+        <section class="card">
+          <div class="card-head"><h2>Deduction items</h2>
+            <div class="list-actions">
+              <select data-role="currency" class="mini-currency"><option>₱</option><option>$</option><option>€</option><option>£</option><option>₹</option><option>¥</option><option>R$</option></select>
+              <button class="btn" data-role="addDeduction" type="button">+ Add item</button>
+            </div>
+          </div>
+          <div class="preset-row" data-role="presetRow">
+            <span class="preset-label">Quick add</span>
+            <button type="button" class="preset-btn" data-preset="water"><span class="p-ico">💧</span> Water Bill</button>
+            <button type="button" class="preset-btn" data-preset="electric"><span class="p-ico">⚡</span> Meralco Bill</button>
+            <button type="button" class="preset-btn" data-preset="rent"><span class="p-ico">🏠</span> House Rent</button>
+          </div>
+          <div data-role="autoTrackedNote"></div>
+          <div class="deductions-list" data-role="deductionList"></div>
+          <p class="note" data-role="deductionTotal"></p>
+          <p class="note">Each amount is <strong>subtracted from that member's total due</strong> in the Summary tab. Items paid via the <strong>Others</strong> tab are auto-tracked here.</p>
+        </section>
+        <section class="card">
+          <h2>Deductions per member</h2>
+          <div class="member-deductions" data-role="memberBreakdown"></div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" data-app="summary" id="panel-summary" role="tabpanel">
+    <div class="layout">
+      <div class="left-col">
+        <section class="card">
+          <div class="card-head"><h2>Household total</h2>
+            <select data-role="currency" class="mini-currency"><option>₱</option><option>$</option><option>€</option><option>£</option><option>₹</option><option>¥</option><option>R$</option></select>
+          </div>
+          <div class="grand-total" data-role="grandTotal">₱0.00</div>
+          <p class="grand-sub">Combined household expenses across all tabs, after deductions.</p>
+          <div class="stats" style="margin-top:4px">
+            <div class="stat"><span>Members</span><strong data-role="sumMembers">0</strong></div>
+            <div class="stat accent"><span>Per-member avg</span><strong data-role="sumAvg">—</strong></div>
+          </div>
+        </section>
+        <section class="card">
+          <h2>By category</h2>
+          <div class="category-list" data-role="tabTotals"></div>
+        </section>
+      </div>
+      <section class="card">
+        <div class="card-head"><h2>Per-member breakdown <span class="hint" style="text-transform:none;letter-spacing:0;opacity:.6">— sorted by largest total due</span></h2>
+          <button class="btn primary" data-role="copySummary" type="button">Copy breakdown</button>
+        </div>
+        <div class="breakdown-table">
+          <div class="breakdown-inner">
+            <div class="breakdown-grid breakdown-header">
+              <div>Member</div><div>Water</div><div>Meralco</div><div>Rent</div><div>Others</div><div>Deduct</div><div>Total due</div>
+            </div>
+            <div data-role="memberList"></div>
+            <div class="breakdown-grid breakdown-footer" data-role="memberTotals"></div>
+          </div>
+        </div>
+        <p class="status" data-role="status"></p>
+      </section>
+    </div>
+  </section>
+</div>
+
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2><span class="modal-icon">📤</span> Full Breakdown <span class="modal-sub" id="exportMeta"></span></h2>
+      <button class="modal-close" type="button" id="exportClose">×</button>
+    </div>
+    <div class="modal-body"><pre id="exportPreview">Loading…</pre></div>
+    <div class="modal-foot">
+      <button class="btn" type="button" id="exportCopyBtn">📋 Copy</button>
+      <button class="btn" type="button" id="exportDownloadBtn">⬇ Download .txt</button>
+      <button class="btn primary" type="button" id="exportPrintBtn">🖨 Print / PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  const COLORS = ['#38bdf8','#22d3ee','#34d399','#a78bfa','#fbbf24','#fb7185','#60a5fa','#f472b6','#4ade80','#f97316','#818cf8','#e879f9','#2dd4bf','#facc15'];
+  const DEFAULT_START = '2026-07-15';
+  const DEFAULT_END = '2026-08-14';
+  const DEFAULT_RENT = 14000;
+  const DEFAULT_AC_MULT = 2;
+  const MAX_DEFAULT_ROOMS = 4;
+  const STORAGE_KEY = 'hatian-household-bills-v1';
+
+  const pad2 = n => String(n).padStart(2,'0');
+  const toISO = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const hexA = (hex,a) => { const n = parseInt(hex.slice(1),16); return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; };
+  const trimNum = v => { const r = Math.round(v*100)/100; return Number.isInteger(r) ? String(r) : String(r); };
+  const escapeHtml = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const prettyDate = iso => { if (!iso) return '—'; const d = new Date(iso+'T00:00:00'); if (isNaN(d)) return '—'; return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); };
+
+  const toastWrap = document.getElementById('toastWrap');
+  function showToast(msg, kind) {
+    kind = kind || 'ok';
+    const el = document.createElement('div');
+    el.className = 'toast ' + kind;
+    el.innerHTML = '<span class="dot"></span><span>' + escapeHtml(msg) + '</span>';
+    toastWrap.appendChild(el);
+    setTimeout(() => el.remove(), 2900);
+  }
+
+  const _changeListeners = [];
+  function notifyChange() { for (let i=0;i<_changeListeners.length;i++){ try{_changeListeners[i]()}catch(e){} } }
+  function onChange(fn) { _changeListeners.push(fn); }
+
+  const globalAmounts = { water:0, electric:0, rent:0, currency:'₱' };
+  const getGlobalAmount = key => globalAmounts[key] || 0;
+
+  const othersBridge = {
+    entries: [], listeners: [],
+    setEntries: function (entries) {
+      this.entries = entries || [];
+      for (let i=0;i<this.listeners.length;i++){ try{this.listeners[i]()}catch(e){} }
+    },
+    subscribe: function (fn) { this.listeners.push(fn); }
+  };
+
+  const dateSync = {
+    _start:'', _end:'', _initialized:false, _handlers:[],
+    emit: function (start, end, source) {
+      if (!this._initialized){ this._start=start; this._end=end; this._initialized=true; return; }
+      if (this._start === start && this._end === end) return;
+      this._start=start; this._end=end;
+      this._handlers.forEach(h => { if (h.source===source) return; try{h.fn(start,end)}catch(e){} });
+    },
+    register: function (source, fn) {
+      this._handlers.push({ source, fn });
+      if (this._initialized && (this._start || this._end)) { try{fn(this._start,this._end)}catch(e){} }
+    }
+  };
+  const daysSync = {
+    _map:{}, _init:false, _handlers:[],
+    emit: function (map, source) {
+      if (!this._init){ this._map=Object.assign({},map); this._init=true; return; }
+      let changed=false;
+      for (const k in map) { if (this._map[k] !== map[k]){ this._map[k]=map[k]; changed=true; } }
+      if (!changed) return;
+      const self = this;
+      this._handlers.forEach(h => { if (h.source===source) return; try{h.fn(Object.assign({},self._map))}catch(e){} });
+    },
+    register: function (source, fn) {
+      this._handlers.push({ source, fn });
+      if (this._init) { try{fn(Object.assign({},this._map))}catch(e){} }
+    }
+  };
+  function setupDateSync(els, sourceId, renderFn) {
+    if (!els.start || !els.end) return;
+    const broadcast = () => { dateSync.emit(els.start.value, els.end.value, sourceId); renderFn(); };
+    els.start.addEventListener('input', broadcast); els.start.addEventListener('change', broadcast);
+    els.end.addEventListener('input', broadcast); els.end.addEventListener('change', broadcast);
+    dateSync.register(sourceId, (start, end) => {
+      if (els.start.value === start && els.end.value === end) return;
+      els.start.value = start; els.end.value = end; renderFn();
+    });
+  }
+
+  /* ====== WATER APP (unchanged) ====== */
+  function createBillApp(root, opts) {
+    const defaultNames = opts.defaultNames || [];
+    const summaryKey = opts.summaryKey || 'water';
+    const label = opts.label || 'Bill';
+    const titlePrefix = opts.titlePrefix || 'BILL';
+    const q = role => root.querySelector('[data-role="' + role + '"]');
+    const els = {
+      currency: q('currency'), bill: q('bill'), start: q('start'), end: q('end'),
+      totalDays: q('totalDays'), dailyRate: q('dailyRate'), periodNote: q('periodNote'),
+      list: q('list'), addBtn: q('addPerson'), evenBtn: q('evenSplit'), copyBtn: q('copySummary'),
+      sumBill: q('sumBill'), sumAllocated: q('sumAllocated'), sumEffective: q('sumEffective'),
+      sumRate: q('sumRate'), status: q('status')
+    };
+    let people = []; let personIdCounter = 0;
+    const curSymbol = () => els.currency.value;
+    const fmt = v => { const n = Number.isFinite(v)?v:0; return curSymbol()+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); };
+    function periodDays() {
+      if (!els.start.value || !els.end.value) return 0;
+      const s = new Date(els.start.value+'T00:00:00'); const e = new Date(els.end.value+'T00:00:00');
+      if (isNaN(s) || isNaN(e)) return 0;
+      const diff = Math.round((e-s)/86400000)+1;
+      return diff > 0 ? diff : 0;
+    }
+    const clampDays = v => Math.min(Math.max(Math.round(Number(v)||0),0),999);
+    const billAmount = () => { const v = Number(els.bill.value); return Number.isFinite(v)&&v>0?v:0; };
+    function paintAvatar(p, color) { p.color=color; p.avatar.style.background=hexA(color,.16); p.avatar.style.color=color; p.avatar.style.borderColor=hexA(color,.38); }
+    function broadcastDays() { const map={}; people.forEach(p=>{ const n=(p.name||'').trim(); if(n) map[n]=p.days; }); daysSync.emit(map, summaryKey); }
+    function applyDaysMap(map) {
+      let changed = false;
+      people.forEach(p => { const n=(p.name||'').trim(); if (n && map[n]!=null && map[n]!==p.days){ p.days=clampDays(map[n]); p.daysInput.value=p.days; changed=true; } });
+      if (changed) render();
+    }
+    function createPerson(name, days, index) {
+      const node = document.createElement('div');
+      node.className = 'person';
+      node.innerHTML = `
+        <div class="person-main">
+          <div class="avatar"></div>
+          <input class="pname" type="text" spellcheck="false" placeholder="Name">
+          <div class="stepper">
+            <button class="step" type="button" data-d="-1">−</button>
+            <input class="pdays" type="number" min="0" step="1" inputmode="numeric">
+            <button class="step" type="button" data-d="1">+</button>
+          </div>
+          <div class="share-amount"><span class="amt">—</span><span class="wt"></span></div>
+          <button class="remove" type="button">×</button>
+        </div>
+        <div class="bar"><i></i></div>
+      `;
+      const p = { id:++personIdCounter, name, days:clampDays(days), color:COLORS[index%COLORS.length], node,
+        nameInput: node.querySelector('.pname'), daysInput: node.querySelector('.pdays'),
+        avatar: node.querySelector('.avatar'), amount: node.querySelector('.share-amount .amt'),
+        weightEl: node.querySelector('.share-amount .wt'), bar: node.querySelector('.bar > i') };
+      paintAvatar(p, COLORS[index%COLORS.length]);
+      p.nameInput.value = name; p.daysInput.value = p.days;
+      p.avatar.textContent = (name.trim()[0]||'?').toUpperCase();
+      p.nameInput.addEventListener('input', () => { p.name=p.nameInput.value; p.avatar.textContent=(p.name.trim()[0]||'?').toUpperCase(); broadcastDays(); render(); });
+      p.daysInput.addEventListener('input', () => { p.days=clampDays(p.daysInput.value); broadcastDays(); render(); });
+      p.daysInput.addEventListener('blur', () => { p.daysInput.value = p.days; });
+      node.querySelectorAll('.step').forEach(btn => btn.addEventListener('click', () => {
+        p.days=clampDays(p.days+Number(btn.dataset.d)); p.daysInput.value=p.days; broadcastDays(); render();
+      }));
+      node.querySelector('.remove').addEventListener('click', () => {
+        if (people.length <= 1) return;
+        people = people.filter(x => x !== p); node.remove();
+        people.forEach((x,i) => paintAvatar(x, COLORS[i%COLORS.length]));
+        broadcastDays(); render();
+      });
+      els.list.appendChild(node); people.push(p);
+      return p;
+    }
+    function render() {
+      const bill = billAmount(); const days = periodDays(); const baseRate = days>0?bill/days:0;
+      let totalWeight = 0;
+      const weights = people.map(p => { const w = p.days; totalWeight += w; return w; });
+      const hasWeight = totalWeight > 0;
+      const unitRate = hasWeight ? bill/totalWeight : 0;
+      els.totalDays.textContent = days > 0 ? days : '—';
+      els.dailyRate.textContent = fmt(baseRate);
+      if (days > 0) {
+        els.periodNote.textContent = prettyDate(els.start.value)+'  →  '+prettyDate(els.end.value)+'  ·  '+days+' day'+(days===1?'':'s');
+        els.periodNote.className = 'note';
+      } else { els.periodNote.textContent = '⚠ Set a valid date range.'; els.periodNote.className = 'note warn'; }
+      const shares = people.map((p,i) => hasWeight ? bill*(weights[i]/totalWeight) : 0);
+      const maxShare = shares.reduce((a,b)=>Math.max(a,b),0);
+      people.forEach((p,i) => {
+        const s = shares[i];
+        if (hasWeight) { p.amount.textContent = fmt(s); p.amount.style.color = s>0 ? p.color : 'var(--muted)'; }
+        else { p.amount.textContent = '—'; p.amount.style.color = 'var(--muted)'; }
+        p.weightEl.textContent = '';
+        p.bar.style.width = maxShare>0 ? (s/maxShare*100)+'%' : '0%';
+        p.bar.style.background = 'linear-gradient(90deg,'+hexA(p.color,.45)+','+p.color+')';
+      });
+      const allocated = shares.reduce((a,b)=>a+b,0);
+      els.sumBill.textContent = fmt(bill);
+      els.sumAllocated.textContent = fmt(allocated);
+      els.sumEffective.textContent = hasWeight ? fmt(unitRate) : '—';
+      els.sumRate.textContent = fmt(baseRate);
+      let msg, cls;
+      if (days === 0) { msg='Enter a valid billing period.'; cls='bad'; }
+      else if (bill === 0) { msg='Enter the total '+label.toLowerCase()+' amount to start splitting.'; cls='warn'; }
+      else if (!hasWeight) { msg='Enter days for at least one member.'; cls='warn'; }
+      else { msg='✓ Split complete — '+trimNum(totalWeight)+' total person-days across '+people.length+' members. Shares add up exactly to '+fmt(bill)+'.'; cls='ok'; }
+      els.status.textContent = msg; els.status.className = 'status ' + cls;
+      notifyChange();
+    }
+    ['input','change'].forEach(evt => { els.bill.addEventListener(evt, render); els.currency.addEventListener(evt, render); });
+    els.addBtn.addEventListener('click', () => { createPerson('Person '+(people.length+1), 0, people.length); broadcastDays(); render(); });
+    els.evenBtn.addEventListener('click', () => { const days = periodDays(); people.forEach(p => { p.days = days; p.daysInput.value = days; }); broadcastDays(); render(); });
+    els.copyBtn.addEventListener('click', () => {
+      const bill = billAmount(); const days = periodDays(); const baseRate = days>0?bill/days:0;
+      let totalWeight = 0;
+      const weights = people.map(p => { totalWeight += p.days; return p.days; });
+      const unitRate = totalWeight>0 ? bill/totalWeight : 0;
+      const lines = [];
+      lines.push(titlePrefix);
+      lines.push('Period: '+prettyDate(els.start.value)+' → '+prettyDate(els.end.value)+' ('+days+' days)');
+      lines.push('Total: '+fmt(bill)); lines.push('Base daily rate: '+fmt(baseRate));
+      if (totalWeight>0) lines.push('Effective rate: '+fmt(unitRate));
+      lines.push('');
+      people.forEach((p,i) => { const s = totalWeight>0 ? bill*(weights[i]/totalWeight) : 0; lines.push('• '+(p.name||'Unnamed')+' — '+p.days+'d — '+fmt(s)); });
+      lines.push(''); lines.push('Total allocated: '+fmt(bill));
+      copyText(els.copyBtn, lines.join('\n'));
+    });
+    function getSummary() {
+      const bill = billAmount(); let totalWeight = 0;
+      const weights = people.map(p => { totalWeight += p.days; return p.days; });
+      const perMember = {};
+      people.forEach((p,i) => { const name=(p.name||'').trim(); if(!name) return; perMember[name] = (perMember[name]||0) + (totalWeight>0 ? bill*(weights[i]/totalWeight) : 0); });
+      return { key:summaryKey, perMember, kind:'expense' };
+    }
+    function getSnapshot() {
+      const bill = billAmount(); let totalWeight = 0;
+      const weights = people.map(p => { totalWeight += p.days; return p.days; });
+      return { bill, totalDays:periodDays(), totalWeight, baseRate:periodDays()>0?bill/periodDays():0,
+        unitRate: totalWeight>0?bill/totalWeight:0,
+        members: people.map((p,i) => ({ name:(p.name||'').trim()||'Unnamed', days:p.days, weight:weights[i], share: totalWeight>0?bill*(weights[i]/totalWeight):0 })) };
+    }
+    function getState() { return { bill:els.bill.value, currency:els.currency.value, people: people.map(p => ({ name:p.name, days:p.days })) }; }
+    function setState(s) {
+      if (!s) return;
+      if (s.currency) els.currency.value = s.currency;
+      if (s.bill != null) els.bill.value = s.bill;
+      if (Array.isArray(s.people) && s.people.length > 0) {
+        people.forEach(p => p.node.remove()); people = []; personIdCounter = 0;
+        s.people.forEach((pp,i) => createPerson(pp.name || ('Person '+(i+1)), pp.days||0, i));
+      }
+      render(); broadcastDays();
+    }
+    function setBill(v) { const num = Number(v); const val = Number.isFinite(num)&&num>0?num:0; if (Number(els.bill.value) === val) return; els.bill.value = val; render(); }
+    function addMemberByName(name) {
+      name = (name||'').trim(); if (!name) return false;
+      if (people.some(p => (p.name||'').trim() === name)) return false;
+      createPerson(name, 0, people.length); broadcastDays(); render();
+      return true;
+    }
+    (function init() {
+      els.start.value = DEFAULT_START; els.end.value = DEFAULT_END;
+      defaultNames.forEach((name,i) => createPerson(name, 0, i));
+      render();
+      setupDateSync(els, summaryKey, render);
+      dateSync.emit(els.start.value, els.end.value, summaryKey);
+      daysSync.register(summaryKey, applyDaysMap);
+      broadcastDays();
+    })();
+    return { getSummary, getSnapshot, getState, setState, setBill, addMemberByName };
+  }
+
+  /* ====== MERALCO APP (NEW room-based) ====== */
+  function createMeralcoApp(root, opts) {
+    const defaultNames = opts.defaultNames || [];
+    const titlePrefix = opts.titlePrefix || '⚡ MERALCO BILL SPLIT';
+    const q = role => root.querySelector('[data-role="' + role + '"]');
+
+    const els = {
+      currency: q('currency'), bill: q('bill'), start: q('start'), end: q('end'),
+      totalDays: q('totalDays'), dailyRate: q('dailyRate'), periodNote: q('periodNote'),
+      list: q('list'), addBtn: q('addPerson'), evenBtn: q('evenSplit'), copyBtn: q('copySummary'),
+      addRoomBtn: q('addRoom'), resetBtn: q('resetMembers'),
+      sumBill: q('sumBill'), sumAllocated: q('sumAllocated'), sumWeight: q('sumWeight'),
+      sumEffective: q('sumEffective'), sumRate: q('sumRate'), status: q('status')
+    };
+
+    let people = [];
+    let rooms = [];
+    let personIdCounter = 0;
+    let roomIdCounter = 0;
+    let layoutSig = '';
+
+    const curSymbol = () => els.currency.value;
+    const fmt = v => { const n = Number.isFinite(v)?v:0; return curSymbol()+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); };
+    const periodDays = () => {
+      if (!els.start.value || !els.end.value) return 0;
+      const s = new Date(els.start.value+'T00:00:00'); const e = new Date(els.end.value+'T00:00:00');
+      if (isNaN(s) || isNaN(e)) return 0;
+      const diff = Math.round((e-s)/86400000)+1;
+      return diff > 0 ? diff : 0;
+    };
+    const clampDays = v => Math.min(Math.max(Math.round(Number(v)||0),0),999);
+    const clampMult = v => { const n = Number(v); if (!Number.isFinite(n)) return DEFAULT_AC_MULT; return Math.min(Math.max(n,1),10); };
+    const billAmount = () => { const v = Number(els.bill.value); return Number.isFinite(v)&&v>0?v:0; };
+
+    /* Layer-split: assumes max overlap, spreads cost fairly by day. */
+    function computeTogetherUnits(daysArr) {
+      const n = daysArr.length;
+      if (n === 0) return [];
+      const units = new Array(n).fill(0);
+      const sorted = daysArr.slice().sort((a,b)=>a-b);
+      let prev = 0;
+      for (let i=0;i<n;i++){
+        const cur = sorted[i];
+        const layer = cur - prev;
+        const present = n - i;
+        if (layer > 0) {
+          const per = layer / present;
+          for (let j=0;j<n;j++) if (daysArr[j] >= cur) units[j] += per;
+        }
+        prev = cur;
+      }
+      return units;
+    }
+
+    function computeWeightMap() {
+      const weights = {};
+      // Unassigned members: just their days
+      people.forEach(p => {
+        if (p.roomId) return;
+        weights[p.id] = p.days;
+      });
+      // Rooms
+      rooms.forEach(room => {
+        const group = people.filter(p => p.roomId === room.id);
+        if (group.length === 0) return;
+        const mult = room.hasAC ? clampMult(room.acMult) : 1;
+        if (room.type === 'solo' || group.length === 1) {
+          group.forEach(p => { weights[p.id] = p.days * mult; });
+          return;
+        }
+        // Shared room
+        if (room.mode === 'apart' || !room.hasAC) {
+          group.forEach(p => { weights[p.id] = p.days * mult; });
+        } else {
+          const daysArr = group.map(p => p.days);
+          const units = computeTogetherUnits(daysArr);
+          group.forEach((p,i) => { weights[p.id] = units[i] * mult; });
+        }
+      });
+      return weights;
+    }
+
+    function paintAvatar(el, color, initial) {
+      el.style.background = hexA(color,.16);
+      el.style.color = color;
+      el.style.borderColor = hexA(color,.38);
+      el.textContent = initial;
+    }
+
+    function broadcastDays() {
+      const map = {};
+      people.forEach(p => { const n=(p.name||'').trim(); if (n) map[n] = p.days; });
+      daysSync.emit(map, 'electric');
+    }
+
+    function applyDaysMap(map) {
+      let changed = false;
+      people.forEach(p => {
+        const n = (p.name||'').trim();
+        if (n && map[n]!=null && map[n]!==p.days) { p.days = clampDays(map[n]); changed = true; }
+      });
+      if (changed) { layoutSig = ''; render(); }
+    }
+
+    function createPerson(name, days, index) {
+      const p = {
+        id: ++personIdCounter,
+        name,
+        days: clampDays(days),
+        roomId: null,
+        color: COLORS[index % COLORS.length]
+      };
+      people.push(p);
+      return p;
+    }
+
+    function createRoom(name, type) {
+      const room = {
+        id: ++roomIdCounter,
+        name: name || ('Room ' + (rooms.length + 1)),
+        type: type || 'shared',
+        hasAC: true,
+        acMult: DEFAULT_AC_MULT,
+        mode: 'together'
+      };
+      rooms.push(room);
+      return room;
+    }
+
+    function currentLayoutSig(weightMap) {
+      const solo = people.filter(p => !p.roomId).map(p => p.id).join(',');
+      const rs = rooms.map(r => {
+        const members = people.filter(p => p.roomId === r.id).map(p => p.id).join(',');
+        return r.id+':'+r.type+':'+r.hasAC+':'+r.mode+':'+members;
+      }).join('|');
+      return solo + '#' + rs;
+    }
+
+    function updateAddRoomBtn() {
+      if (!els.addRoomBtn) return;
+      const n = rooms.length;
+      if (n >= MAX_DEFAULT_ROOMS) {
+        els.addRoomBtn.textContent = '⚠ Add room (over ' + MAX_DEFAULT_ROOMS + ')';
+        els.addRoomBtn.classList.add('warn');
+      } else {
+        els.addRoomBtn.textContent = '+ Add room';
+        els.addRoomBtn.classList.remove('warn');
+      }
+    }
+
+    /* Build the full member/room DOM */
+    function buildList(weightMap) {
+      const list = els.list;
+      if (!list) return;
+      list.innerHTML = '';
+
+      const unassigned = people.filter(p => !p.roomId);
+
+      // Unassigned section (if any)
+      if (unassigned.length > 0) {
+        const block = document.createElement('div');
+        block.className = 'section-block';
+        const label = document.createElement('div');
+        label.className = 'section-block-label';
+        label.innerHTML = '<span>👤 Unassigned members</span><span class="sl-count">' + unassigned.length + '</span>';
+        block.appendChild(label);
+        const rows = document.createElement('div');
+        rows.className = 'unassigned-rows';
+        unassigned.forEach(p => rows.appendChild(buildMemberRow(p, weightMap)));
+        block.appendChild(rows);
+        list.appendChild(block);
+      }
+
+      // Rooms section
+      if (rooms.length > 0) {
+        const block = document.createElement('div');
+        block.className = 'section-block';
+        const label = document.createElement('div');
+        label.className = 'section-block-label rooms-label';
+        label.innerHTML = '<span>🛏️ Shared rooms</span><span class="sl-count">' + rooms.length + '</span><span class="sl-hint">AC applies per room</span>';
+        block.appendChild(label);
+        rooms.forEach(room => block.appendChild(buildRoomCard(room, weightMap)));
+        list.appendChild(block);
+      }
+
+      // Empty state if nothing
+      if (rooms.length === 0 && unassigned.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-rooms';
+        empty.innerHTML = '<strong>No members yet.</strong><br>Click "+ Add member" to add house members.';
+        list.appendChild(empty);
+      }
+
+      // Rooms footer with add button + hint
+      if (rooms.length > 0 || people.length > 0) {
+        const footer = document.createElement('div');
+        footer.className = 'rooms-footer';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'add-room-btn' + (rooms.length >= MAX_DEFAULT_ROOMS ? ' warn' : '');
+        btn.textContent = rooms.length >= MAX_DEFAULT_ROOMS ? ('⚠ Add room (over ' + MAX_DEFAULT_ROOMS + ')') : '+ Add room';
+        btn.addEventListener('click', () => {
+          createRoom(); layoutSig = ''; render();
+          showToast('Room created', 'ok');
+        });
+        footer.appendChild(btn);
+        if (rooms.length >= MAX_DEFAULT_ROOMS) {
+          const hint = document.createElement('div');
+          hint.className = 'room-limit-hint warn';
+          hint.textContent = 'You have ' + rooms.length + ' rooms (default is ' + MAX_DEFAULT_ROOMS + '). Adding more is fine.';
+          footer.appendChild(hint);
+        } else {
+          const hint = document.createElement('div');
+          hint.className = 'room-limit-hint';
+          hint.textContent = 'Up to ' + (MAX_DEFAULT_ROOMS - rooms.length) + ' more room' + ((MAX_DEFAULT_ROOMS - rooms.length) === 1 ? '' : 's') + ' to reach the default limit of ' + MAX_DEFAULT_ROOMS + '.';
+          footer.appendChild(hint);
+        }
+        list.appendChild(footer);
+      }
+    }
+
+    /* Member row for unassigned members */
+    function buildMemberRow(p, weightMap) {
+      const w = weightMap[p.id] || 0;
+      const row = document.createElement('div');
+      row.className = 'mr-row';
+      row.innerHTML = `
+        <span class="avatar"></span>
+        <input class="pname mr-name" type="text" spellcheck="false" value="${escapeHtml(p.name)}" placeholder="Name">
+        <div class="stepper">
+          <button class="step" type="button" data-d="-1">−</button>
+          <input class="pdays" type="number" min="0" step="1" inputmode="numeric" value="${p.days}">
+          <button class="step" type="button" data-d="1">+</button>
+        </div>
+        <span class="mr-weight">${trimNum(w)}u</span>
+        <span class="mr-amount">—</span>
+        <button class="remove" type="button">×</button>
+      `;
+      const avatar = row.querySelector('.avatar');
+      paintAvatar(avatar, p.color, (p.name.trim()[0]||'?').toUpperCase());
+
+      row.querySelector('.pname').addEventListener('input', function () {
+        p.name = this.value;
+        paintAvatar(avatar, p.color, (p.name.trim()[0]||'?').toUpperCase());
+        broadcastDays(); render();
+      });
+      row.querySelector('.pdays').addEventListener('input', function () {
+        p.days = clampDays(this.value); broadcastDays(); render();
+      });
+      row.querySelectorAll('.step').forEach(btn => btn.addEventListener('click', () => {
+        p.days = clampDays(p.days + Number(btn.dataset.d));
+        const inp = row.querySelector('.pdays'); if (inp) inp.value = p.days;
+        broadcastDays(); render();
+      }));
+      row.querySelector('.remove').addEventListener('click', () => {
+        people = people.filter(x => x !== p); layoutSig = ''; broadcastDays(); render();
+      });
+
+      return row;
+    }
+
+    /* Room card */
+    function buildRoomCard(room, weightMap) {
+      const group = people.filter(p => p.roomId === room.id);
+      let totalUnits = 0;
+      group.forEach(p => totalUnits += (weightMap[p.id] || 0));
+
+      const card = document.createElement('div');
+      card.className = 'room-card' + (room.hasAC ? '' : ' no-ac');
+
+      // Header
+      card.innerHTML = `
+        <div class="room-header">
+          <span class="rh-icon">🛏️</span>
+          <input class="rh-name" type="text" maxlength="20" value="${escapeHtml(room.name)}" aria-label="Room name">
+          <div class="rh-type" role="group" aria-label="Room type">
+            <button type="button" data-type="solo"${room.type === 'solo' ? ' class="is-active"' : ''}>Solo</button>
+            <button type="button" data-type="shared"${room.type === 'shared' ? ' class="is-active"' : ''}>Shared</button>
+          </div>
+          <div class="rh-settings">
+            <label class="rh-ac-toggle${room.hasAC ? ' on' : ''}">
+              <input type="checkbox" class="rh-ac-check"${room.hasAC ? ' checked' : ''}>
+              <span>AC</span>
+            </label>
+            <div class="rh-mult-field${room.hasAC ? ' on' : ''}">
+              <span class="rh-mult-label">×</span>
+              <input type="number" class="rh-mult" min="1" max="10" step="0.1" value="${trimNum(room.acMult)}"${room.hasAC ? '' : ' disabled'}>
+            </div>
+            <select class="rh-mode"${(!room.hasAC || room.type === 'solo' || group.length < 2) ? ' disabled' : ''}>
+              <option value="together"${room.mode === 'together' ? ' selected' : ''}>Together</option>
+              <option value="apart"${room.mode === 'apart' ? ' selected' : ''}>Apart</option>
+            </select>
+          </div>
+          <span class="rh-units">${trimNum(totalUnits)}u</span>
+          <button class="rh-remove" type="button" title="Remove room">×</button>
+        </div>
+        <div class="room-body"></div>
+      `;
+
+      const nameInput = card.querySelector('.rh-name');
+      nameInput.addEventListener('input', function () { room.name = this.value; });
+      nameInput.addEventListener('blur', function () { this.value = room.name || 'Room'; });
+
+      card.querySelectorAll('.rh-type button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const newType = btn.dataset.type;
+          if (newType === room.type) return;
+          if (newType === 'solo' && group.length > 1) {
+            if (!window.confirm('Switch to Solo?\n\nOnly the first member will stay in this room. Others will become unassigned.')) return;
+            group.slice(1).forEach(p => { p.roomId = null; });
+          }
+          room.type = newType;
+          layoutSig = ''; render();
+        });
+      });
+
+      const acCheck = card.querySelector('.rh-ac-check');
+      acCheck.addEventListener('change', function () {
+        room.hasAC = this.checked;
+        layoutSig = ''; render();
+      });
+
+      const multInput = card.querySelector('.rh-mult');
+      multInput.addEventListener('input', function () {
+        room.acMult = clampMult(this.value); render();
+      });
+      multInput.addEventListener('blur', function () { this.value = trimNum(room.acMult); });
+
+      const modeSel = card.querySelector('.rh-mode');
+      modeSel.addEventListener('change', function () {
+        room.mode = this.value; layoutSig = ''; render();
+      });
+
+      card.querySelector('.rh-remove').addEventListener('click', () => {
+        if (!window.confirm('Remove "' + (room.name || 'Room') + '"?\n\nMembers will become unassigned.')) return;
+        people.forEach(p => { if (p.roomId === room.id) p.roomId = null; });
+        rooms = rooms.filter(r => r.id !== room.id);
+        layoutSig = ''; render();
+        showToast('Removed ' + (room.name || 'room'), 'ok');
+      });
+
+      // Body
+      const body = card.querySelector('.room-body');
+      if (room.type === 'solo') {
+        body.appendChild(buildSoloBody(room, group, weightMap));
+      } else {
+        body.appendChild(buildSharedBody(room, group, weightMap));
+      }
+
+      return card;
+    }
+
+    function buildSoloBody(room, group, weightMap) {
+      const wrap = document.createElement('div');
+      const assigned = group[0] || null;
+
+      const row = document.createElement('div');
+      row.className = 'rs-solo-row';
+
+      const select = document.createElement('select');
+      select.innerHTML = '<option value="">— Select member —</option>';
+      people.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name || 'Unnamed';
+        if (assigned && assigned.id === p.id) opt.selected = true;
+        select.appendChild(opt);
+      });
+      select.addEventListener('change', function () {
+        const newId = Number(this.value) || null;
+        // Clear anyone else in this room
+        people.forEach(p => { if (p.roomId === room.id && p.id !== newId) p.roomId = null; });
+        if (newId) {
+          const m = people.find(x => x.id === newId);
+          // Remove from any other room
+          if (m) m.roomId = room.id;
+        }
+        layoutSig = ''; render();
+      });
+      row.appendChild(select);
+
+      const stepper = document.createElement('div');
+      stepper.className = 'stepper';
+      stepper.innerHTML = `
+        <button class="step" type="button" data-d="-1">−</button>
+        <input class="pdays" type="number" min="0" step="1" value="${assigned ? assigned.days : 0}"${assigned ? '' : ' disabled'}>
+        <button class="step" type="button" data-d="1">+</button>
+      `;
+      if (assigned) {
+        stepper.querySelector('.pdays').addEventListener('input', function () {
+          assigned.days = clampDays(this.value); broadcastDays(); render();
+        });
+        stepper.querySelectorAll('.step').forEach(btn => btn.addEventListener('click', () => {
+          assigned.days = clampDays(assigned.days + Number(btn.dataset.d));
+          stepper.querySelector('.pdays').value = assigned.days;
+          broadcastDays(); render();
+        }));
+      }
+      row.appendChild(stepper);
+
+      const w = assigned ? (weightMap[assigned.id] || 0) : 0;
+      const wEl = document.createElement('span');
+      wEl.className = 'mr-weight';
+      wEl.textContent = assigned ? trimNum(w) + 'u' : '—';
+      row.appendChild(wEl);
+
+      const aEl = document.createElement('span');
+      aEl.className = 'mr-amount';
+      aEl.textContent = '—';
+      row.appendChild(aEl);
+
+      wrap.appendChild(row);
+
+      // Store references for updating
+      if (assigned) {
+        assigned._soloAmountEl = aEl;
+        assigned._soloWeightEl = wEl;
+      }
+      return wrap;
+    }
+
+    function buildSharedBody(room, group, weightMap) {
+      const wrap = document.createElement('div');
+      wrap.style.display = 'flex';
+      wrap.style.flexDirection = 'column';
+      wrap.style.gap = '10px';
+
+      // Chip row for member selection
+      const chips = document.createElement('div');
+      chips.className = 'rs-chips';
+      const label = document.createElement('span');
+      label.className = 'rs-label';
+      label.textContent = 'Members:';
+      chips.appendChild(label);
+
+      people.forEach(p => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip' + (p.roomId === room.id ? ' on' : '');
+        chip.textContent = p.name || 'Unnamed';
+        chip.addEventListener('click', () => {
+          if (p.roomId === room.id) {
+            // Remove
+            p.roomId = null;
+          } else {
+            // Add (remove from any other room)
+            p.roomId = room.id;
+          }
+          layoutSig = ''; render();
+        });
+        chips.appendChild(chip);
+      });
+      wrap.appendChild(chips);
+
+      // Member rows
+      const rows = document.createElement('div');
+      rows.className = 'room-members-rows';
+
+      if (group.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'padding:14px;text-align:center;font-size:11.5px;color:var(--muted);background:rgba(255,255,255,.02);border:1px dashed rgba(251,191,36,.25);border-radius:10px';
+        empty.textContent = 'Click a member chip above to add them to this room.';
+        rows.appendChild(empty);
+      } else {
+        group.forEach(p => {
+          const r = document.createElement('div');
+          r.className = 'mr-row';
+          const w = weightMap[p.id] || 0;
+          r.innerHTML = `
+            <span class="avatar"></span>
+            <span class="mr-name">${escapeHtml(p.name || 'Unnamed')}</span>
+            <div class="stepper">
+              <button class="step" type="button" data-d="-1">−</button>
+              <input class="pdays" type="number" min="0" step="1" value="${p.days}">
+              <button class="step" type="button" data-d="1">+</button>
+            </div>
+            <span class="mr-weight">${trimNum(w)}u</span>
+            <span class="mr-amount">—</span>
+            <button class="remove" type="button">×</button>
+          `;
+          const av = r.querySelector('.avatar');
+          paintAvatar(av, p.color, (p.name.trim()[0]||'?').toUpperCase());
+
+          r.querySelector('.pdays').addEventListener('input', function () {
+            p.days = clampDays(this.value); broadcastDays(); render();
+          });
+          r.querySelectorAll('.step').forEach(btn => btn.addEventListener('click', () => {
+            p.days = clampDays(p.days + Number(btn.dataset.d));
+            r.querySelector('.pdays').value = p.days;
+            broadcastDays(); render();
+          }));
+          r.querySelector('.remove').addEventListener('click', () => {
+            p.roomId = null;
+            layoutSig = ''; render();
+          });
+
+          p._sharedAmountEl = r.querySelector('.mr-amount');
+          p._sharedWeightEl = r.querySelector('.mr-weight');
+
+          rows.appendChild(r);
+        });
+      }
+
+      wrap.appendChild(rows);
+      return wrap;
+    }
+
+    function render() {
+      const bill = billAmount();
+      const days = periodDays();
+      const baseRate = days > 0 ? bill / days : 0;
+
+      const weightMap = computeWeightMap();
+      const weights = people.map(p => weightMap[p.id] || 0);
+      const totalWeight = weights.reduce((a,b)=>a+b,0);
+      const hasWeight = totalWeight > 0;
+      const unitRate = hasWeight ? bill / totalWeight : 0;
+
+      els.totalDays.textContent = days > 0 ? days : '—';
+      els.dailyRate.textContent = fmt(baseRate);
+
+      if (days > 0) {
+        els.periodNote.textContent = prettyDate(els.start.value)+'  →  '+prettyDate(els.end.value)+'  ·  '+days+' day'+(days===1?'':'s');
+        els.periodNote.className = 'note';
+      } else { els.periodNote.textContent = '⚠ Set a valid date range.'; els.periodNote.className = 'note warn'; }
+
+      const shares = people.map((p,i) => hasWeight ? bill * (weights[i] / totalWeight) : 0);
+
+      // Update per-member displays (if DOM refs exist)
+      people.forEach((p,i) => {
+        const s = shares[i];
+        if (p._soloAmountEl) { p._soloAmountEl.textContent = hasWeight ? fmt(s) : '—'; p._soloAmountEl.style.color = s>0 ? p.color : 'var(--muted)'; }
+        if (p._sharedAmountEl) { p._sharedAmountEl.textContent = hasWeight ? fmt(s) : '—'; p._sharedAmountEl.style.color = s>0 ? p.color : 'var(--muted)'; }
+      });
+
+      // Update summary
+      const allocated = shares.reduce((a,b)=>a+b,0);
+      els.sumBill.textContent = fmt(bill);
+      els.sumAllocated.textContent = fmt(allocated);
+      if (els.sumWeight) els.sumWeight.textContent = hasWeight ? trimNum(totalWeight) : '—';
+      els.sumEffective.textContent = hasWeight ? fmt(unitRate) : '—';
+      els.sumRate.textContent = fmt(baseRate);
+
+      // Status message
+      let msg, cls;
+      if (days === 0) { msg='Enter a valid billing period.'; cls='bad'; }
+      else if (bill === 0) { msg='Enter the Meralco bill amount to start splitting.'; cls='warn'; }
+      else if (!hasWeight) { msg='Enter days for at least one member.'; cls='warn'; }
+      else {
+        const acCount = rooms.filter(r => r.hasAC).length;
+        const parts = [];
+        if (rooms.length > 0) parts.push(rooms.length + ' room' + (rooms.length===1?'':'s'));
+        if (acCount > 0) parts.push(acCount + ' with AC');
+        const extra = parts.length > 0 ? ' · ' + parts.join(' · ') : '';
+        msg = '✓ Split complete — ' + people.length + ' members' + extra + '. Total ' + trimNum(totalWeight) + ' weighted days. Shares add up exactly to ' + fmt(bill) + '.';
+        cls = 'ok';
+      }
+      els.status.textContent = msg; els.status.className = 'status ' + cls;
+
+      // Rebuild the list DOM (only if structure changed)
+      const sig = currentLayoutSig(weightMap);
+      if (sig !== layoutSig) {
+        layoutSig = sig;
+        // Clear DOM refs before rebuilding
+        people.forEach(p => { p._soloAmountEl = null; p._sharedAmountEl = null; p._soloWeightEl = null; p._sharedWeightEl = null; });
+        buildList(weightMap);
+        // After rebuild, do another pass to set amounts
+        const newShares = people.map((p,i) => hasWeight ? bill * (weights[i] / totalWeight) : 0);
+        people.forEach((p,i) => {
+          const s = newShares[i];
+          if (p._soloAmountEl) { p._soloAmountEl.textContent = hasWeight ? fmt(s) : '—'; p._soloAmountEl.style.color = s>0 ? p.color : 'var(--muted)'; }
+          if (p._sharedAmountEl) { p._sharedAmountEl.textContent = hasWeight ? fmt(s) : '—'; p._sharedAmountEl.style.color = s>0 ? p.color : 'var(--muted)'; }
+        });
+      }
+
+      updateAddRoomBtn();
+      notifyChange();
+    }
+
+    ['input','change'].forEach(evt => { els.bill.addEventListener(evt, render); els.currency.addEventListener(evt, render); });
+
+    els.addBtn.addEventListener('click', () => {
+      createPerson('Person ' + (people.length+1), 0, people.length);
+      layoutSig = ''; broadcastDays(); render();
+    });
+    els.evenBtn.addEventListener('click', () => {
+      const days = periodDays();
+      people.forEach(p => { p.days = days; });
+      layoutSig = ''; broadcastDays(); render();
+    });
+    if (els.addRoomBtn) {
+      els.addRoomBtn.addEventListener('click', () => {
+        const room = createRoom();
+        layoutSig = ''; render();
+        showToast('Created ' + room.name, 'ok');
+      });
+    }
+    if (els.resetBtn) {
+      els.resetBtn.addEventListener('click', () => {
+        if (!window.confirm('Reset all Meralco days to 0?\n\nBill amount, rooms, and structure are kept.')) return;
+        people.forEach(p => { p.days = 0; });
+        layoutSig = ''; broadcastDays(); render();
+        showToast('All days reset to 0', 'ok');
+      });
+    }
+    els.copyBtn.addEventListener('click', () => {
+      const bill = billAmount(); const days = periodDays(); const baseRate = days>0?bill/days:0;
+      const weightMap = computeWeightMap();
+      const weights = people.map(p => weightMap[p.id] || 0);
+      const totalWeight = weights.reduce((a,b)=>a+b,0);
+      const unitRate = totalWeight > 0 ? bill/totalWeight : 0;
+      const lines = [];
+      lines.push(titlePrefix);
+      lines.push('Period: '+prettyDate(els.start.value)+' → '+prettyDate(els.end.value)+' ('+days+' days)');
+      lines.push('Total: '+fmt(bill));
+      lines.push('Base daily rate: '+fmt(baseRate));
+      if (totalWeight>0) lines.push('Effective rate: '+fmt(unitRate));
+      lines.push('');
+      // Solo (unassigned) members
+      const unassigned = people.filter(p => !p.roomId);
+      if (unassigned.length > 0) {
+        lines.push('Unassigned members:');
+        unassigned.forEach(p => {
+          const i = people.indexOf(p);
+          lines.push('  • ' + (p.name||'Unnamed') + ' — ' + p.days + 'd — ' + fmt(totalWeight>0?bill*(weights[i]/totalWeight):0));
+        });
+        lines.push('');
+      }
+      // Rooms
+      rooms.forEach(room => {
+        const group = people.filter(p => p.roomId === room.id);
+        if (group.length === 0) return;
+        let totalU = 0; group.forEach(p => totalU += (weightMap[p.id]||0));
+        const mode = (room.type === 'shared' && room.hasAC && group.length > 1) ? (' · ' + room.mode) : '';
+        const acTxt = room.hasAC ? ('AC ×' + trimNum(room.acMult) + mode) : 'No AC';
+        lines.push('🛏️ ' + (room.name || 'Room') + ' (' + room.type + ' · ' + acTxt + ') — ' + trimNum(totalU) + 'u');
+        group.forEach(p => {
+          const i = people.indexOf(p);
+          lines.push('    • ' + (p.name||'Unnamed') + ' — ' + p.days + 'd · ' + trimNum(weightMap[p.id]||0) + 'u — ' + fmt(totalWeight>0?bill*(weights[i]/totalWeight):0));
+        });
+        lines.push('');
+      });
+      lines.push('Total allocated: ' + fmt(bill));
+      copyText(els.copyBtn, lines.join('\n'));
+    });
+
+    function getSummary() {
+      const bill = billAmount();
+      const weightMap = computeWeightMap();
+      const weights = people.map(p => weightMap[p.id] || 0);
+      const totalWeight = weights.reduce((a,b)=>a+b,0);
+      const perMember = {};
+      people.forEach((p,i) => { const name = (p.name||'').trim(); if (!name) return; perMember[name] = (perMember[name]||0) + (totalWeight>0 ? bill*(weights[i]/totalWeight) : 0); });
+      return { key:'electric', perMember, kind:'expense' };
+    }
+
+    function getSnapshot() {
+      const bill = billAmount();
+      const weightMap = computeWeightMap();
+      const weights = people.map(p => weightMap[p.id] || 0);
+      const totalWeight = weights.reduce((a,b)=>a+b,0);
+      return {
+        bill, totalDays: periodDays(), totalWeight,
+        baseRate: periodDays()>0?bill/periodDays():0,
+        unitRate: totalWeight>0?bill/totalWeight:0,
+        members: people.map((p,i) => {
+          const room = rooms.find(r => r.id === p.roomId);
+          return {
+            name: (p.name||'').trim()||'Unnamed',
+            days: p.days,
+            room: room ? room.name : '',
+            roomType: room ? room.type : '',
+            weight: weights[i],
+            share: totalWeight>0 ? bill*(weights[i]/totalWeight) : 0
+          };
+        }),
+        rooms: rooms.map(r => ({
+          name: r.name, type: r.type, hasAC: r.hasAC, acMult: r.acMult, mode: r.mode,
+          members: people.filter(p => p.roomId === r.id).map(p => ({ name: p.name, days: p.days }))
+        }))
+      };
+    }
+
+    function getState() {
+      return {
+        bill: els.bill.value,
+        currency: els.currency.value,
+        people: people.map(p => ({ name: p.name, days: p.days, roomId: p.roomId })),
+        rooms: rooms.map(r => ({ id: r.id, name: r.name, type: r.type, hasAC: r.hasAC, acMult: r.acMult, mode: r.mode })),
+        personIdCounter, roomIdCounter
+      };
+    }
+
+    function setState(s) {
+      if (!s) return;
+      if (s.currency) els.currency.value = s.currency;
+      if (s.bill != null) els.bill.value = s.bill;
+      rooms = [];
+      people = [];
+      roomIdCounter = s.roomIdCounter || 0;
+      personIdCounter = s.personIdCounter || 0;
+      // Recreate rooms first (need ids preserved)
+      if (Array.isArray(s.rooms)) {
+        s.rooms.forEach(r => rooms.push({ id:r.id, name:r.name||'Room', type:r.type||'shared', hasAC:r.hasAC!==false, acMult:r.acMult||DEFAULT_AC_MULT, mode:r.mode||'together' }));
+      }
+      if (Array.isArray(s.people) && s.people.length > 0) {
+        s.people.forEach((pp,i) => {
+          const p = { id: ++personIdCounter, name: pp.name||('Person '+(i+1)), days: clampDays(pp.days||0), roomId: pp.roomId || null, color: COLORS[i%COLORS.length] };
+          people.push(p);
+        });
+      }
+      layoutSig = ''; render(); broadcastDays();
+    }
+
+    function setBill(v) { const num = Number(v); const val = Number.isFinite(num)&&num>0?num:0; if (Number(els.bill.value) === val) return; els.bill.value = val; render(); }
+    function addMemberByName(name) {
+      name = (name||'').trim(); if (!name) return false;
+      if (people.some(p => (p.name||'').trim() === name)) return false;
+      createPerson(name, 0, people.length);
+      layoutSig = ''; broadcastDays(); render();
+      return true;
+    }
+
+    (function init() {
+      els.start.value = DEFAULT_START; els.end.value = DEFAULT_END;
+      defaultNames.forEach((name,i) => createPerson(name, 0, i));
+      render();
+      setupDateSync(els, 'electric', render);
+      dateSync.emit(els.start.value, els.end.value, 'electric');
+      daysSync.register('electric', applyDaysMap);
+      broadcastDays();
+    })();
+
+    return { getSummary, getSnapshot, getState, setState, setBill, addMemberByName };
+  }
+
+  /* ====== RENT APP ====== */
+  function createRentApp(root, opts) {
+    const defaultNames = opts.defaultNames || [];
+    const defaultShares = opts.defaultShares || {};
+    const q = role => root.querySelector('[data-role="' + role + '"]');
+    const els = {
+      currency: q('currency'), bill: q('bill'), start: q('start'), end: q('end'),
+      periodNote: q('periodNote'), statTotal: q('statTotal'), statAssigned: q('statAssigned'),
+      list: q('list'), addBtn: q('addPerson'), evenBtn: q('evenSplit'), copyBtn: q('copySummary'),
+      sumBill: q('sumBill'), sumAllocated: q('sumAllocated'), sumDifference: q('sumDifference'),
+      sumMembers: q('sumMembers'), status: q('status')
+    };
+    let members = [];
+    const curSymbol = () => els.currency.value;
+    const fmt = v => { const n = Number.isFinite(v)?v:0; return curSymbol()+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); };
+    const rentAmount = () => { const v = Number(els.bill.value); return Number.isFinite(v)&&v>0?v:0; };
+    const clampAmount = v => { const n = Number(v); if (!Number.isFinite(n)||n<0) return 0; return Math.round(n*100)/100; };
+    function paintAvatar(m,color){ m.color=color; m.avatar.style.background=hexA(color,.16); m.avatar.style.color=color; m.avatar.style.borderColor=hexA(color,.38); }
+    function createMember(name, amount, index) {
+      const node = document.createElement('div');
+      node.className = 'person rent';
+      node.innerHTML = `
+        <div class="person-main">
+          <div class="avatar"></div>
+          <input class="pname" type="text" spellcheck="false" placeholder="Name">
+          <div class="stepper amount-stepper">
+            <button class="step" type="button" data-d="-100">−</button>
+            <input class="pshare" type="number" min="0" step="0.01" inputmode="decimal">
+            <button class="step" type="button" data-d="100">+</button>
+          </div>
+          <button class="remove" type="button">×</button>
+        </div>
+        <div class="bar"><i></i></div>
+      `;
+      const m = { name, amount: clampAmount(amount), color: COLORS[index%COLORS.length], node,
+        nameInput: node.querySelector('.pname'), amountInput: node.querySelector('.pshare'),
+        avatar: node.querySelector('.avatar'), bar: node.querySelector('.bar > i') };
+      paintAvatar(m, COLORS[index%COLORS.length]);
+      m.nameInput.value = name; m.amountInput.value = m.amount;
+      m.avatar.textContent = (name.trim()[0]||'?').toUpperCase();
+      m.nameInput.addEventListener('input', () => { m.name = m.nameInput.value; m.avatar.textContent = (m.name.trim()[0]||'?').toUpperCase(); render(); });
+      m.amountInput.addEventListener('input', () => { m.amount = clampAmount(m.amountInput.value); render(); });
+      m.amountInput.addEventListener('blur', () => { m.amountInput.value = m.amount; });
+      node.querySelectorAll('.step').forEach(btn => btn.addEventListener('click', () => {
+        m.amount = clampAmount(m.amount + Number(btn.dataset.d)); m.amountInput.value = m.amount; render();
+      }));
+      node.querySelector('.remove').addEventListener('click', () => {
+        if (members.length <= 1) return;
+        members = members.filter(x => x !== m); node.remove();
+        members.forEach((x,i) => paintAvatar(x, COLORS[i%COLORS.length])); render();
+      });
+      els.list.appendChild(node); members.push(m);
+      return m;
+    }
+    function render() {
+      const rent = rentAmount();
+      const assigned = members.reduce((a,m)=>a+m.amount,0);
+      const difference = rent - assigned;
+      els.statTotal.textContent = fmt(rent);
+      els.statAssigned.textContent = fmt(assigned);
+      if (els.start.value && els.end.value) {
+        els.periodNote.textContent = prettyDate(els.start.value)+'  →  '+prettyDate(els.end.value);
+        els.periodNote.className = 'note';
+      } else { els.periodNote.textContent = ''; els.periodNote.className = 'note'; }
+      const maxAmount = members.reduce((a,m)=>Math.max(a,m.amount),0);
+      members.forEach(m => {
+        m.bar.style.width = maxAmount > 0 ? (m.amount/maxAmount*100)+'%' : '0%';
+        m.bar.style.background = 'linear-gradient(90deg,'+hexA(m.color,.45)+','+m.color+')';
+      });
+      els.sumBill.textContent = fmt(rent);
+      els.sumAllocated.textContent = fmt(assigned);
+      els.sumDifference.textContent = fmt(Math.abs(difference));
+      els.sumMembers.textContent = String(members.length);
+      els.sumDifference.style.color = Math.abs(difference) < 0.005 ? 'var(--good)' : (difference > 0 ? 'var(--warn)' : 'var(--bad)');
+      let msg, cls;
+      if (rent === 0) { msg = 'Enter the monthly rent.'; cls = 'warn'; }
+      else if (assigned === 0) { msg = 'Enter each member\'s rent share.'; cls = 'warn'; }
+      else if (Math.abs(difference) < 0.005) { msg = '✓ Balanced — shares add up exactly to ' + fmt(rent) + '.'; cls = 'ok'; }
+      else if (difference > 0) { msg = '⚠ ' + fmt(difference) + ' is still unassigned.'; cls = 'warn'; }
+      else { msg = '⚠ Over-assigned by ' + fmt(-difference) + '.'; cls = 'bad'; }
+      els.status.textContent = msg; els.status.className = 'status ' + cls;
+      notifyChange();
+    }
+    ['input','change'].forEach(evt => { els.bill.addEventListener(evt, render); els.currency.addEventListener(evt, render); });
+    els.addBtn.addEventListener('click', () => { createMember('Person ' + (members.length+1), 0, members.length); render(); });
+    els.evenBtn.addEventListener('click', () => {
+      const rent = rentAmount(); const n = members.length;
+      if (n === 0 || rent <= 0) return;
+      const per = Math.floor((rent/n)*100)/100;
+      let running = 0;
+      members.forEach((m,i) => {
+        if (i === members.length-1) m.amount = Math.round((rent-running)*100)/100;
+        else { m.amount = per; running += per; }
+        m.amountInput.value = m.amount;
+      });
+      render();
+    });
+    els.copyBtn.addEventListener('click', () => {
+      const rent = rentAmount();
+      const assigned = members.reduce((a,m)=>a+m.amount,0);
+      const difference = rent - assigned;
+      const lines = [];
+      lines.push('🏠 HOUSE RENT SPLIT');
+      if (els.start.value && els.end.value) lines.push('Period: '+prettyDate(els.start.value)+' → '+prettyDate(els.end.value));
+      lines.push('Monthly rent: '+fmt(rent));
+      lines.push('');
+      members.forEach(m => lines.push('• '+(m.name||'Unnamed')+' — '+fmt(m.amount)));
+      lines.push(''); lines.push('Total assigned: '+fmt(assigned));
+      lines.push(Math.abs(difference)<0.005 ? '✓ Balanced' : (difference>0 ? 'Unassigned: '+fmt(difference) : 'Over-assigned: '+fmt(-difference)));
+      copyText(els.copyBtn, lines.join('\n'));
+    });
+    function getSummary() {
+      const perMember = {};
+      members.forEach(m => { const n = (m.name||'').trim(); if (!n) return; perMember[n] = (perMember[n]||0) + m.amount; });
+      return { key:'rent', perMember, kind:'expense' };
+    }
+    function getSnapshot() {
+      return { bill: rentAmount(), members: members.map(m => ({ name: (m.name||'').trim()||'Unnamed', amount: m.amount })) };
+    }
+    function getState() { return { bill:els.bill.value, currency:els.currency.value, members: members.map(m => ({ name:m.name, amount:m.amount })) }; }
+    function setState(s) {
+      if (!s) return;
+      if (s.currency) els.currency.value = s.currency;
+      if (s.bill != null) els.bill.value = s.bill;
+      if (Array.isArray(s.members) && s.members.length > 0) {
+        members.forEach(m => m.node.remove()); members = [];
+        s.members.forEach((mm,i) => createMember(mm.name || ('Person '+(i+1)), mm.amount||0, i));
+      }
+      render();
+    }
+    function setBill(v) { const num = Number(v); const val = Number.isFinite(num)&&num>0?num:0; if (Number(els.bill.value) === val) return; els.bill.value = val; render(); }
+    function addMemberByName(name) {
+      name = (name||'').trim(); if (!name) return false;
+      if (members.some(m => (m.name||'').trim() === name)) return false;
+      createMember(name, 0, members.length); render();
+      return true;
+    }
+    (function init() {
+      els.start.value = DEFAULT_START; els.end.value = DEFAULT_END;
+      defaultNames.forEach((name,i) => {
+        const amount = defaultShares[name] != null ? defaultShares[name] : 0;
+        createMember(name, amount, i);
+      });
+      render();
+      setupDateSync(els, 'rent', render);
+      dateSync.emit(els.start.value, els.end.value, 'rent');
+    })();
+    return { getSummary, getSnapshot, getState, setState, setBill, addMemberByName };
+  }
+
+  /* ====== OTHERS APP ====== */
+  function createOthersApp(root, opts) {
+    const defaultNames = opts.defaultNames || [];
+    const q = role => root.querySelector('[data-role="' + role + '"]');
+    const els = {
+      currency: q('currency'), start: q('start'), end: q('end'), periodNote: q('periodNote'),
+      expenseList: q('expenseList'), addExpense: q('addExpense'), expenseTotal: q('expenseTotal'),
+      list: q('list'), addBtn: q('addPerson'), copyBtn: q('copySummary'),
+      sumTotal: q('sumTotal'), sumAllocated: q('sumAllocated'),
+      sumItems: q('sumItems'), sumMembers: q('sumMembers'),
+      status: q('status'), settlement: q('settlement')
+    };
+    let members = []; let expenses = [];
+    let memberIdCounter = 0; let expenseIdCounter = 0;
+    const curSymbol = () => els.currency ? els.currency.value : '₱';
+    const fmt = v => { const n = Number.isFinite(v)?v:0; return curSymbol()+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); };
+
+    function addMember(name) { const id = ++memberIdCounter; const m = { id, name, color: COLORS[members.length%COLORS.length] }; members.push(m); expenses.forEach(e => e.participants.add(id)); return m; }
+    function removeMember(id) { if (members.length <= 1) return; members = members.filter(m => m.id !== id);
+      expenses.forEach(e => { e.participants.delete(id); if (e.paidBy === id) e.paidBy = members[0]?members[0].id:null; });
+      members.forEach((m,i) => m.color = COLORS[i%COLORS.length]); }
+    function addExpense() {
+      const id = ++expenseIdCounter;
+      const e = { id, description:'', amount:0, paidBy: members[0]?members[0].id:null, participants: new Set(members.map(m => m.id)) };
+      expenses.push(e); return e;
+    }
+    function createExpenseNode(e) {
+      const node = document.createElement('div');
+      node.className = 'expense';
+      node.innerHTML = `
+        <div class="expense-top">
+          <input class="exp-desc" type="text" spellcheck="false" placeholder="Description">
+          <input class="exp-amt" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+          <button class="remove exp-remove" type="button">×</button>
+        </div>
+        <div class="expense-meta">
+          <label class="exp-paidby">Paid by <select class="exp-paidby-sel"></select></label>
+        </div>
+        <div class="exp-participants">
+          <span class="exp-label">Split among:</span>
+          <div class="chips"></div>
+        </div>
+      `;
+      const descInput = node.querySelector('.exp-desc');
+      const amtInput = node.querySelector('.exp-amt');
+      const paidBySel = node.querySelector('.exp-paidby-sel');
+      const chipsBox = node.querySelector('.chips');
+      descInput.value = e.description;
+      amtInput.value = e.amount ? e.amount : '';
+      members.forEach(m => { const opt = document.createElement('option'); opt.value = m.id; opt.textContent = m.name || 'Unnamed'; if (m.id === e.paidBy) opt.selected = true; paidBySel.appendChild(opt); });
+      const chipMap = new Map();
+      members.forEach(m => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip' + (e.participants.has(m.id) ? ' on' : '');
+        chip.textContent = m.name || 'Unnamed';
+        chip.addEventListener('click', () => {
+          if (e.participants.has(m.id)) { e.participants.delete(m.id); chip.classList.remove('on'); }
+          else { e.participants.add(m.id); chip.classList.add('on'); }
+          renderTotals();
+        });
+        chipsBox.appendChild(chip); chipMap.set(m.id, chip);
+      });
+      descInput.addEventListener('input', () => { e.description = descInput.value; renderTotals(); });
+      amtInput.addEventListener('input', () => { const v = Number(amtInput.value); e.amount = Number.isFinite(v)&&v>0?v:0; renderTotals(); });
+      paidBySel.addEventListener('change', () => { e.paidBy = Number(paidBySel.value); renderTotals(); });
+      node.querySelector('.exp-remove').addEventListener('click', () => { expenses = expenses.filter(x => x.id !== e.id); node.remove(); renderTotals(); });
+      e._node = node; e._paidBySel = paidBySel; e._chips = chipMap;
+      return node;
+    }
+    function renderExpenses() { els.expenseList.innerHTML = ''; expenses.forEach(e => els.expenseList.appendChild(createExpenseNode(e))); }
+    function syncMemberRefs() {
+      expenses.forEach(e => {
+        if (e._paidBySel) {
+          Array.from(e._paidBySel.options).forEach(opt => { const m = members.find(x => x.id === Number(opt.value)); if (m) opt.textContent = m.name || 'Unnamed'; });
+          if (e.paidBy != null && members.some(m => m.id === e.paidBy)) e._paidBySel.value = String(e.paidBy);
+          else if (members[0]) { e.paidBy = members[0].id; e._paidBySel.value = String(e.paidBy); }
+        }
+        if (e._chips) e._chips.forEach((chip, mid) => { const m = members.find(x => x.id === mid); if (m) chip.textContent = m.name || 'Unnamed'; });
+      });
+    }
+    function createMemberNode(m) {
+      const node = document.createElement('div');
+      node.className = 'person others';
+      node.innerHTML = `
+        <div class="person-main">
+          <div class="avatar"></div>
+          <input class="pname" type="text" spellcheck="false" placeholder="Name">
+          <div class="share-amount"><span class="amt">—</span><span class="meta"></span></div>
+          <button class="remove" type="button">×</button>
+        </div>
+        <div class="bar"><i></i></div>
+      `;
+      const avatar = node.querySelector('.avatar');
+      avatar.style.background = hexA(m.color,.16); avatar.style.color = m.color; avatar.style.borderColor = hexA(m.color,.38);
+      avatar.textContent = (m.name.trim()[0]||'?').toUpperCase();
+      const nameInput = node.querySelector('.pname');
+      nameInput.value = m.name;
+      nameInput.addEventListener('input', () => { m.name = nameInput.value; avatar.textContent = (m.name.trim()[0]||'?').toUpperCase(); syncMemberRefs(); renderTotals(); });
+      node.querySelector('.remove').addEventListener('click', () => { if (members.length <= 1) return; removeMember(m.id); renderExpenses(); buildMembers(); renderTotals(); });
+      m._node = node; m._amtEl = node.querySelector('.amt'); m._metaEl = node.querySelector('.meta'); m._barEl = node.querySelector('.bar > i');
+      return node;
+    }
+    function buildMembers() { els.list.innerHTML = ''; members.forEach(m => els.list.appendChild(createMemberNode(m))); }
+    function renderSettlement(shares, paid) {
+      if (!els.settlement) return;
+      const nets = members.map(m => ({ member:m, net: (paid.get(m.id)||0) - (shares.get(m.id)||0) }));
+      const hasAny = nets.some(n => Math.abs(n.net) > 0.005);
+      if (!hasAny) { els.settlement.innerHTML = ''; return; }
+      const debtors = nets.filter(n => n.net < -0.005).map(n => ({ name:n.member.name, amt:-n.net }));
+      const creditors = nets.filter(n => n.net > 0.005).map(n => ({ name:n.member.name, amt:n.net }));
+      debtors.sort((a,b) => b.amt-a.amt); creditors.sort((a,b) => b.amt-a.amt);
+      const txns = []; let i=0,j=0;
+      while (i<debtors.length && j<creditors.length) {
+        const pay = Math.min(debtors[i].amt, creditors[j].amt);
+        if (pay > 0.005) txns.push({ from:debtors[i].name, to:creditors[j].name, amt:pay });
+        debtors[i].amt -= pay; creditors[j].amt -= pay;
+        if (debtors[i].amt < 0.005) i++;
+        if (creditors[j].amt < 0.005) j++;
+      }
+      if (txns.length === 0) { els.settlement.innerHTML = ''; return; }
+      let html = '<h3>Settle up</h3><div class="settlement-list">';
+      txns.forEach(t => { html += '<div class="settlement-item"><span class="from">'+escapeHtml(t.from||'Unnamed')+'</span><span class="arrow">→</span><span class="to">'+escapeHtml(t.to||'Unnamed')+'</span><span class="amt">'+fmt(t.amt)+'</span></div>'; });
+      html += '</div>';
+      els.settlement.innerHTML = html;
+    }
+    function computeShares() {
+      const shares = new Map(); const paid = new Map();
+      members.forEach(m => { shares.set(m.id, 0); paid.set(m.id, 0); });
+      let total = 0, allocated = 0, unallocatedItems = 0;
+      expenses.forEach(e => {
+        const amt = e.amount || 0;
+        const participants = Array.from(e.participants).filter(id => members.some(m => m.id === id));
+        if (e._node) e._node.classList.toggle('unallocated', amt > 0 && participants.length === 0);
+        total += amt;
+        if (amt <= 0) return;
+        if (participants.length === 0) { unallocatedItems++; return; }
+        const per = amt / participants.length;
+        participants.forEach(id => { shares.set(id, (shares.get(id)||0)+per); allocated += per; });
+        if (e.paidBy != null && members.some(m => m.id === e.paidBy)) paid.set(e.paidBy, (paid.get(e.paidBy)||0)+amt);
+      });
+      return { shares, paid, total, allocated, unallocatedItems };
+    }
+    function syncToBridge() {
+      const entries = [];
+      expenses.forEach(e => {
+        if (!(e.amount > 0)) return;
+        const payer = members.find(m => m.id === e.paidBy);
+        if (!payer) return;
+        const name = (payer.name||'').trim();
+        if (!name) return;
+        entries.push({ name, description: e.description || '(no description)', amount: e.amount, date: els.start.value || '' });
+      });
+      othersBridge.setEntries(entries);
+    }
+    function renderTotals() {
+      const r = computeShares();
+      const shares = r.shares, paid = r.paid;
+      if (els.periodNote) {
+        if (els.start.value && els.end.value) { els.periodNote.textContent = prettyDate(els.start.value)+'  →  '+prettyDate(els.end.value); els.periodNote.className = 'note'; }
+        else { els.periodNote.textContent = ''; els.periodNote.className = 'note'; }
+      }
+      const maxShare = members.reduce((a,m) => Math.max(a, shares.get(m.id)||0), 0);
+      members.forEach(m => {
+        const s = shares.get(m.id)||0; const p = paid.get(m.id)||0; const net = p - s;
+        m._amtEl.textContent = fmt(s); m._amtEl.style.color = s > 0 ? m.color : 'var(--muted)';
+        let metaHTML = '';
+        if (p > 0 || s > 0) {
+          metaHTML = 'paid ' + fmt(p) + ' · ';
+          if (Math.abs(net) < 0.005) metaHTML += 'settled';
+          else if (net > 0) metaHTML += '<b class="net-pos">+ ' + fmt(net) + '</b>';
+          else metaHTML += '<b class="net-neg">− ' + fmt(-net) + '</b>';
+        }
+        m._metaEl.innerHTML = metaHTML;
+        m._barEl.style.width = maxShare > 0 ? (s/maxShare*100)+'%' : '0%';
+        m._barEl.style.background = 'linear-gradient(90deg,'+hexA(m.color,.45)+','+m.color+')';
+      });
+      els.sumTotal.textContent = fmt(r.total);
+      els.sumAllocated.textContent = fmt(r.allocated);
+      els.sumItems.textContent = String(expenses.length);
+      els.sumMembers.textContent = String(members.length);
+      if (els.expenseTotal) {
+        els.expenseTotal.textContent = expenses.length === 0 ? 'No expenses yet.' : expenses.length + ' expense' + (expenses.length===1?'':'s') + ' · total ' + fmt(r.total);
+      }
+      let msg, cls;
+      if (expenses.length === 0) { msg = 'Add an expense to start splitting.'; cls = 'warn'; }
+      else if (r.total === 0) { msg = 'Enter amounts for your expenses to see the split.'; cls = 'warn'; }
+      else if (r.unallocatedItems > 0) { msg = '⚠ ' + r.unallocatedItems + ' expense(s) have no participants.'; cls = 'warn'; }
+      else { msg = '✓ Split complete — ' + fmt(r.total) + ' across ' + expenses.length + ' items.'; cls = 'ok'; }
+      els.status.textContent = msg; els.status.className = 'status ' + cls;
+      renderSettlement(shares, paid); syncToBridge(); notifyChange();
+    }
+    if (els.currency) els.currency.addEventListener('change', renderTotals);
+    els.addExpense.addEventListener('click', () => { addExpense(); renderExpenses(); renderTotals(); });
+    els.addBtn.addEventListener('click', () => { addMember('Person ' + (members.length+1)); renderExpenses(); buildMembers(); renderTotals(); });
+    els.copyBtn.addEventListener('click', () => {
+      const r = computeShares();
+      const lines = [];
+      lines.push('📋 OTHER EXPENSES SPLIT');
+      if (els.start.value && els.end.value) lines.push('Period: '+prettyDate(els.start.value)+' → '+prettyDate(els.end.value));
+      lines.push('');
+      expenses.forEach(e => {
+        const participants = Array.from(e.participants).filter(id => members.some(m => m.id === id));
+        const names = participants.map(id => { const m = members.find(x => x.id === id); return m ? m.name : ''; }).filter(Boolean).join(', ');
+        const payer = members.find(m => m.id === e.paidBy);
+        lines.push('• ' + (e.description||'(no description)') + ' — ' + fmt(e.amount) + ' · paid by ' + (payer?payer.name:'—') + ' · split among ' + (names||'nobody'));
+      });
+      lines.push(''); lines.push('Total: '+fmt(r.total)); lines.push('');
+      members.forEach(m => lines.push('• '+(m.name||'Unnamed')+' — share '+fmt(r.shares.get(m.id)||0)+' · paid '+fmt(r.paid.get(m.id)||0)));
+      copyText(els.copyBtn, lines.join('\n'));
+    });
+    function getSummary() {
+      const r = computeShares();
+      const perMember = {};
+      members.forEach(m => { const n = (m.name||'').trim(); if (!n) return; perMember[n] = (perMember[n]||0) + (r.shares.get(m.id)||0); });
+      return { key:'others', perMember, kind:'expense' };
+    }
+    function getSnapshot() {
+      const r = computeShares();
+      return { total: r.total,
+        expenses: expenses.map(e => {
+          const payer = members.find(m => m.id === e.paidBy);
+          const participants = Array.from(e.participants).map(id => { const m = members.find(x => x.id === id); return m ? (m.name||'').trim() : ''; }).filter(Boolean);
+          return { description: e.description||'(no description)', amount: e.amount||0, paidBy: payer?(payer.name||'').trim():'—', participants };
+        }),
+        members: members.map(m => ({ name: (m.name||'').trim()||'Unnamed', share: r.shares.get(m.id)||0, paid: r.paid.get(m.id)||0 })) };
+    }
+    function getState() {
+      return { currency: els.currency.value,
+        members: members.map(m => ({ name: m.name })),
+        expenses: expenses.map(e => {
+          const payer = members.find(m => m.id === e.paidBy);
+          const participants = Array.from(e.participants).map(id => { const m = members.find(x => x.id === id); return m ? (m.name||'').trim() : ''; }).filter(Boolean);
+          return { description: e.description, amount: e.amount, paidBy: payer?(payer.name||'').trim():'', participants };
+        }) };
+    }
+    function setState(s) {
+      if (!s) return;
+      if (s.currency) els.currency.value = s.currency;
+      members.forEach(m => { if (m._node) m._node.remove(); });
+      members = []; memberIdCounter = 0;
+      (s.members||[]).forEach(mm => addMember(mm.name || 'Unnamed'));
+      expenses = []; expenseIdCounter = 0;
+      (s.expenses||[]).forEach(ee => {
+        const id = ++expenseIdCounter;
+        const payer = members.find(m => (m.name||'').trim() === ee.paidBy);
+        const participantIds = new Set();
+        (ee.participants||[]).forEach(n => { const m = members.find(x => (x.name||'').trim() === n); if (m) participantIds.add(m.id); });
+        expenses.push({ id, description: ee.description||'', amount: ee.amount||0, paidBy: payer ? payer.id : (members[0]?members[0].id:null), participants: participantIds });
+      });
+      renderExpenses(); buildMembers(); renderTotals();
+    }
+    function addMemberByName(name) {
+      name = (name||'').trim(); if (!name) return false;
+      if (members.some(m => (m.name||'').trim() === name)) return false;
+      addMember(name); renderExpenses(); buildMembers(); renderTotals();
+      return true;
+    }
+    (function init() {
+      els.start.value = DEFAULT_START; els.end.value = DEFAULT_END;
+      defaultNames.forEach(name => addMember(name));
+      addExpense();
+      renderExpenses(); buildMembers(); renderTotals();
+      setupDateSync(els, 'others', renderTotals);
+      dateSync.emit(els.start.value, els.end.value, 'others');
+    })();
+    return { getSummary, getSnapshot, getState, setState, addMemberByName };
+  }
+
+  /* ====== DEDUCTIONS APP ====== */
+  function createDeductionsApp(root, opts) {
+    const defaultNames = opts.defaultNames || [];
+    const q = role => root.querySelector('[data-role="' + role + '"]');
+    const els = {
+      currency: q('currency'), start: q('start'), end: q('end'), periodNote: q('periodNote'),
+      deductionList: q('deductionList'), addDeduction: q('addDeduction'),
+      deductionTotal: q('deductionTotal'), memberBreakdown: q('memberBreakdown'),
+      autoTrackedNote: q('autoTrackedNote'), copyBtn: q('copySummary'),
+      sumTotal: q('sumTotal'), sumWith: q('sumWith'),
+      sumEntries: q('sumEntries'), sumAvg: q('sumAvg'), status: q('status')
+    };
+    let members = []; let deductions = [];
+    let memberIdCounter = 0; let deductionIdCounter = 0;
+    const curSymbol = () => els.currency ? els.currency.value : '₱';
+    const fmt = v => { const n = Number.isFinite(v)?v:0; return curSymbol()+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); };
+
+    function addMember(name) { const id = ++memberIdCounter; const m = { id, name, color: COLORS[members.length%COLORS.length] }; members.push(m); return m; }
+    function addDeduction() {
+      const id = ++deductionIdCounter;
+      const d = { id, memberId: members[0]?members[0].id:null, description:'', date: els.start.value||toISO(new Date()), amount:0 };
+      deductions.push(d);
+      return d;
+    }
+    function addPreset(kind) {
+      const presetMap = {
+        water: { desc:'Water Bill', amount: getGlobalAmount('water') },
+        electric: { desc:'Meralco Bill', amount: getGlobalAmount('electric') },
+        rent: { desc:'House Rent', amount: getGlobalAmount('rent') }
+      };
+      const preset = presetMap[kind];
+      if (!preset) return;
+      const id = ++deductionIdCounter;
+      deductions.push({ id, memberId: members[0]?members[0].id:null, description: preset.desc, date: els.start.value||toISO(new Date()), amount: preset.amount || 0 });
+      renderDeductions(); renderTotals();
+      showToast('Added "' + preset.desc + '" preset', 'ok');
+    }
+    function createDeductionNode(d) {
+      const node = document.createElement('div');
+      node.className = 'deduction';
+      node.innerHTML = `
+        <select class="ded-member"></select>
+        <input class="ded-desc" type="text" spellcheck="false" placeholder="Description" list="dedPresetList">
+        <button class="remove ded-remove" type="button">×</button>
+        <input class="ded-date" type="date">
+        <input class="ded-amt" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+      `;
+      const memberSel = node.querySelector('.ded-member');
+      const descInput = node.querySelector('.ded-desc');
+      const dateInput = node.querySelector('.ded-date');
+      const amtInput = node.querySelector('.ded-amt');
+      members.forEach(m => { const opt = document.createElement('option'); opt.value = m.id; opt.textContent = m.name || 'Unnamed'; if (m.id === d.memberId) opt.selected = true; memberSel.appendChild(opt); });
+      descInput.value = d.description;
+      dateInput.value = d.date || '';
+      amtInput.value = d.amount ? d.amount : '';
+      memberSel.addEventListener('change', () => { d.memberId = Number(memberSel.value); renderTotals(); });
+      descInput.addEventListener('input', () => { d.description = descInput.value; });
+      dateInput.addEventListener('input', () => { d.date = dateInput.value; renderTotals(); });
+      amtInput.addEventListener('input', () => { const v = Number(amtInput.value); d.amount = Number.isFinite(v)&&v>0?v:0; renderTotals(); });
+      node.querySelector('.ded-remove').addEventListener('click', () => { deductions = deductions.filter(x => x.id !== d.id); node.remove(); renderTotals(); });
+      d._node = node; d._memberSel = memberSel;
+      return node;
+    }
+    function renderDeductions() {
+      els.deductionList.innerHTML = '';
+      if (deductions.length === 0) {
+        els.deductionList.innerHTML = '<div class="empty-state">No deduction items yet. Use a Quick add preset, or click "+ Add item".</div>';
+        return;
+      }
+      deductions.forEach(d => els.deductionList.appendChild(createDeductionNode(d)));
+    }
+    function syncMemberRefs() {
+      deductions.forEach(d => {
+        if (d._memberSel) {
+          const cur = d._memberSel.value;
+          d._memberSel.innerHTML = '';
+          members.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id; opt.textContent = m.name || 'Unnamed';
+            if (String(m.id) === cur || m.id === d.memberId) opt.selected = true;
+            d._memberSel.appendChild(opt);
+          });
+        }
+      });
+    }
+    function getCombined() {
+      const byName = new Map();
+      members.forEach(m => { const n = (m.name||'').trim(); if (n && !byName.has(n)) byName.set(n, { member:m, total:0, entries:[] }); });
+      deductions.forEach(d => {
+        if (!(d.amount > 0)) return;
+        const m = members.find(x => x.id === d.memberId); if (!m) return;
+        const n = (m.name||'').trim(); if (!n) return;
+        if (!byName.has(n)) byName.set(n, { member:m, total:0, entries:[] });
+        const rec = byName.get(n);
+        rec.total += d.amount;
+        rec.entries.push({ description: d.description||'(no description)', date: d.date||'', amount: d.amount, isAuto: false });
+      });
+      othersBridge.entries.forEach(e => {
+        if (!e.name || !(e.amount > 0)) return;
+        const m = members.find(x => (x.name||'').trim() === e.name);
+        if (!byName.has(e.name)) byName.set(e.name, { member:m, total:0, entries:[] });
+        const rec = byName.get(e.name);
+        rec.total += e.amount;
+        rec.entries.push({ description: e.description||'(no description)', date: e.date||'', amount: e.amount, isAuto: true });
+      });
+      return byName;
+    }
+    function renderAutoTrackedNote() {
+      if (!els.autoTrackedNote) return;
+      const auto = othersBridge.entries.filter(e => e.amount > 0);
+      if (auto.length === 0) { els.autoTrackedNote.innerHTML = ''; return; }
+      const total = auto.reduce((a,e) => a+e.amount, 0);
+      const names = new Set(auto.map(e => e.name));
+      els.autoTrackedNote.innerHTML = '<div class="auto-tracked-note"><span class="dot"></span><div><strong>'+auto.length+' item'+(auto.length===1?'':'s')+'</strong> auto-tracked from the Others tab — '+names.size+' payer'+(names.size===1?'':'s')+' · '+fmt(total)+'. These are added to each payer\'s total below.</div></div>';
+    }
+    function renderMemberBreakdown() {
+      if (!els.memberBreakdown) return;
+      const combined = getCombined();
+      const list = [];
+      combined.forEach((rec, name) => { if (rec.total > 0) list.push({ name, member:rec.member, entries:rec.entries, total:rec.total }); });
+      list.sort((a,b) => b.total-a.total);
+      if (list.length === 0) { els.memberBreakdown.innerHTML = '<div class="empty-state">No deductions recorded.</div>'; return; }
+      let html = '';
+      list.forEach(item => {
+        const m = item.member;
+        const initial = (item.name[0]||'?').toUpperCase();
+        const color = m ? m.color : '#f472b6';
+        html += '<div class="member-card"><div class="member-card-head">';
+        html += '<span class="avatar" style="background:'+hexA(color,.16)+';color:'+color+';border-color:'+hexA(color,.38)+'">'+escapeHtml(initial)+'</span>';
+        html += '<span class="member-card-name">'+escapeHtml(item.name)+'</span>';
+        html += '<span class="member-card-total">'+fmt(item.total)+'</span></div>';
+        html += '<div class="member-card-items">';
+        item.entries.forEach(e => {
+          html += '<div class="member-item"><div class="mi-left"><div class="mi-desc">'+escapeHtml(e.description)+(e.isAuto?'<span class="auto-badge">Others</span>':'')+'</div>';
+          html += '<div class="mi-date">'+(e.date?prettyDate(e.date):'—')+'</div></div>';
+          html += '<div class="mi-amount">'+fmt(e.amount)+'</div></div>';
+        });
+        html += '</div></div>';
+      });
+      els.memberBreakdown.innerHTML = html;
+    }
+    function renderTotals() {
+      const combined = getCombined();
+      let manualTotal = 0, autoTotal = 0, manualCount = 0, autoCount = 0, membersWithDeduction = 0;
+      deductions.forEach(d => { if (!(d.amount>0)) return; manualTotal += d.amount; manualCount++; });
+      othersBridge.entries.forEach(e => { if (!(e.amount>0)) return; autoTotal += e.amount; autoCount++; });
+      const total = manualTotal + autoTotal;
+      combined.forEach(rec => { if (rec.total > 0) membersWithDeduction++; });
+      els.sumTotal.textContent = fmt(total);
+      els.sumWith.textContent = String(membersWithDeduction);
+      els.sumEntries.textContent = String(manualCount+autoCount);
+      els.sumAvg.textContent = membersWithDeduction>0 ? fmt(total/membersWithDeduction) : '—';
+      if (els.periodNote) {
+        if (els.start.value && els.end.value) { els.periodNote.textContent = prettyDate(els.start.value)+'  →  '+prettyDate(els.end.value); els.periodNote.className = 'note'; }
+        else { els.periodNote.textContent = ''; els.periodNote.className = 'note'; }
+      }
+      if (els.deductionTotal) {
+        if (total === 0) els.deductionTotal.textContent = 'No items with amounts yet.';
+        else {
+          const parts = [];
+          if (manualCount > 0) parts.push(manualCount + ' manual');
+          if (autoCount > 0) parts.push(autoCount + ' auto from Others');
+          els.deductionTotal.textContent = parts.join(' · ') + ' · total ' + fmt(total);
+        }
+      }
+      let msg, cls;
+      if (total === 0) { msg = 'Use Quick add presets, add manual deductions, or add expenses in the Others tab.'; cls = 'warn'; }
+      else { msg = '✓ ' + fmt(total) + ' in deductions across ' + membersWithDeduction + ' member' + (membersWithDeduction===1?'':'s') + (autoCount>0?' (including '+autoCount+' auto-tracked)':'') + '.'; cls = 'ok'; }
+      els.status.textContent = msg; els.status.className = 'status ' + cls;
+      renderAutoTrackedNote(); renderMemberBreakdown(); notifyChange();
+    }
+    if (els.currency) els.currency.addEventListener('change', renderTotals);
+    els.addDeduction.addEventListener('click', () => { addDeduction(); renderDeductions(); renderTotals(); });
+    root.querySelectorAll('[data-preset]').forEach(btn => btn.addEventListener('click', () => addPreset(btn.dataset.preset)));
+    els.copyBtn.addEventListener('click', () => {
+      const combined = getCombined();
+      const list = [];
+      combined.forEach((rec, name) => { if (rec.total > 0) list.push({ name, total:rec.total, entries:rec.entries }); });
+      list.sort((a,b) => b.total-a.total);
+      const lines = [];
+      lines.push('💸 DEDUCTIONS');
+      if (els.start.value && els.end.value) lines.push('Period: '+prettyDate(els.start.value)+' → '+prettyDate(els.end.value));
+      lines.push(''); lines.push('Per member totals:');
+      let grand = 0;
+      list.forEach(item => {
+        lines.push('• ' + item.name + ' — ' + fmt(item.total));
+        item.entries.forEach(e => lines.push('    ' + (e.isAuto?'[Others] ':'[Manual] ') + (e.description || '(no description)') + ' — ' + (e.date ? prettyDate(e.date) : '—') + ' — ' + fmt(e.amount)));
+        grand += item.total;
+      });
+      lines.push(''); lines.push('Total: '+fmt(grand));
+      copyText(els.copyBtn, lines.join('\n'));
+    });
+    function getSummary() {
+      const perMember = {};
+      deductions.forEach(d => {
+        if (!(d.amount>0)) return;
+        const m = members.find(x => x.id === d.memberId); if (!m) return;
+        const n = (m.name||'').trim(); if (!n) return;
+        perMember[n] = (perMember[n]||0) + d.amount;
+      });
+      othersBridge.entries.forEach(e => { if (!e.name || !(e.amount>0)) return; perMember[e.name] = (perMember[e.name]||0) + e.amount; });
+      return { key:'deductions', perMember, kind:'deduction' };
+    }
+    function getSnapshot() {
+      const manual = [];
+      deductions.forEach(d => {
+        if (!(d.amount>0)) return;
+        const m = members.find(x => x.id === d.memberId);
+        manual.push({ name: m ? (m.name||'').trim() : '—', description: d.description, date: d.date, amount: d.amount });
+      });
+      const auto = othersBridge.entries.filter(e => e.amount > 0).map(e => ({ name: e.name, description: e.description, date: e.date, amount: e.amount }));
+      const per = new Map();
+      manual.forEach(m => per.set(m.name, (per.get(m.name)||0) + m.amount));
+      auto.forEach(a => per.set(a.name, (per.get(a.name)||0) + a.amount));
+      const perMember = Array.from(per.entries()).map(kv => ({ name: kv[0], total: kv[1] }));
+      perMember.sort((a,b) => b.total-a.total);
+      const total = perMember.reduce((a,p) => a+p.total, 0);
+      return { total, manual, auto, perMember };
+    }
+    function getState() {
+      return { currency: els.currency.value,
+        members: members.map(m => ({ name: m.name })),
+        deductions: deductions.map(d => { const m = members.find(x => x.id === d.memberId); return { memberName: m ? (m.name||'').trim() : '', description: d.description, date: d.date, amount: d.amount }; }) };
+    }
+    function setState(s) {
+      if (!s) return;
+      if (s.currency) els.currency.value = s.currency;
+      members = []; memberIdCounter = 0;
+      (s.members||[]).forEach(mm => addMember(mm.name || 'Unnamed'));
+      deductions = []; deductionIdCounter = 0;
+      (s.deductions||[]).forEach(dd => {
+        const id = ++deductionIdCounter;
+        const m = members.find(x => (x.name||'').trim() === dd.memberName);
+        deductions.push({ id, memberId: m ? m.id : (members[0]?members[0].id:null), description: dd.description||'', date: dd.date||'', amount: dd.amount||0 });
+      });
+      renderDeductions(); renderTotals();
+    }
+    function addMemberByName(name) {
+      name = (name||'').trim(); if (!name) return false;
+      if (members.some(m => (m.name||'').trim() === name)) return false;
+      addMember(name); renderDeductions(); renderTotals();
+      return true;
+    }
+    (function init() {
+      els.start.value = DEFAULT_START; els.end.value = DEFAULT_END;
+      defaultNames.forEach(name => addMember(name));
+      renderDeductions(); renderTotals();
+      setupDateSync(els, 'deductions', renderTotals);
+      dateSync.emit(els.start.value, els.end.value, 'deductions');
+      othersBridge.subscribe(() => renderTotals());
+    })();
+    return { getSummary, getSnapshot, getState, setState, addMemberByName };
+  }
+
+  /* ====== SUMMARY APP ====== */
+  function createSummaryApp(root, opts) {
+    const apps = opts.apps;
+    const q = role => root.querySelector('[data-role="' + role + '"]');
+    const els = {
+      currency: q('currency'), grandTotal: q('grandTotal'), tabTotals: q('tabTotals'),
+      memberList: q('memberList'), memberTotals: q('memberTotals'),
+      copyBtn: q('copySummary'), status: q('status'),
+      sumMembers: q('sumMembers'), sumAvg: q('sumAvg')
+    };
+    const ORDER = ['water','electric','rent','others','deductions'];
+    const META = {
+      water: { icon:'💧', label:'Water Bill', short:'Water' },
+      electric: { icon:'⚡', label:'Meralco Bill', short:'Meralco' },
+      rent: { icon:'🏠', label:'House Rent', short:'Rent' },
+      others: { icon:'📋', label:'Others', short:'Others' },
+      deductions: { icon:'💸', label:'Deductions', short:'Deduct' }
+    };
+    const curSymbol = () => els.currency ? els.currency.value : '₱';
+    const fmt = v => { const n = Number.isFinite(v)?v:0; return curSymbol()+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); };
+    const fmtDeduct = v => { const n = Number.isFinite(v)?v:0; if (Math.abs(n)<0.005) return fmt(0); return '−'+fmt(n); };
+
+    function combine() {
+      const summaries = apps.map(a => a.getSummary());
+      const byKey = {}; summaries.forEach(s => byKey[s.key] = s);
+      const allNames = new Set();
+      summaries.forEach(s => Object.keys(s.perMember).forEach(n => { if (n) allNames.add(n); }));
+      const names = Array.from(allNames);
+      const rows = names.map(name => {
+        const cells = {}; let total = 0;
+        ORDER.forEach(key => {
+          const s = byKey[key]; if (!s) return;
+          const v = s.perMember[name] || 0;
+          cells[key] = v;
+          if (s.kind === 'expense') total += v;
+          else if (s.kind === 'deduction') total -= v;
+        });
+        return { name, cells, total };
+      });
+      rows.sort((a,b) => { if (Math.abs(b.total-a.total) > 0.005) return b.total-a.total; return a.name.localeCompare(b.name); });
+      const tabTotals = {};
+      ORDER.forEach(key => { const s = byKey[key]; if (!s) return; let t = 0; Object.keys(s.perMember).forEach(n => { t += s.perMember[n]; }); tabTotals[key] = t; });
+      const grand = rows.reduce((a,r) => a+r.total, 0);
+      return { rows, tabTotals, grand, names };
+    }
+
+    function render() {
+      const c = combine();
+      els.grandTotal.textContent = fmt(c.grand);
+      els.sumMembers.textContent = String(c.names.length);
+      els.sumAvg.textContent = c.names.length > 0 ? fmt(c.grand/c.names.length) : '—';
+      let catHTML = '';
+      ORDER.forEach(key => {
+        const meta = META[key]; const v = c.tabTotals[key] || 0;
+        const isDed = key === 'deductions';
+        const display = isDed ? fmtDeduct(v) : fmt(v);
+        let cls = 'cat-value'; if (isDed && Math.abs(v) > 0.005) cls += ' neg';
+        catHTML += '<div class="category-item"><span class="cat-icon">'+meta.icon+'</span><span class="cat-label">'+meta.label+'</span><span class="'+cls+'">'+display+'</span></div>';
+      });
+      els.tabTotals.innerHTML = catHTML;
+      const maxAbs = c.rows.reduce((a,r) => Math.max(a, Math.abs(r.total)), 0);
+      let rowsHTML = '';
+      c.rows.forEach(r => {
+        let cellsHTML = '';
+        ORDER.forEach(key => {
+          const v = r.cells[key] || 0;
+          const isDed = key === 'deductions';
+          const display = isDed ? fmtDeduct(v) : fmt(v);
+          let cls = 'cell'; if (Math.abs(v) < 0.005) cls += ' zero'; else if (isDed) cls += ' neg';
+          cellsHTML += '<div class="'+cls+'">'+display+'</div>';
+        });
+        const barW = maxAbs > 0 ? (Math.abs(r.total)/maxAbs*100) : 0;
+        const barColor = r.total >= 0 ? 'linear-gradient(90deg,rgba(56,189,248,.55),#22d3ee,#a78bfa)' : 'linear-gradient(90deg,rgba(248,113,113,.55),#f87171)';
+        rowsHTML += '<div class="breakdown-row"><div class="breakdown-grid breakdown-main"><div class="breakdown-name"><span class="avatar">'+escapeHtml((r.name[0]||'?').toUpperCase())+'</span><span class="name">'+escapeHtml(r.name)+'</span></div>'+cellsHTML+'<div class="total-cell">'+fmt(r.total)+'</div></div><div class="breakdown-bar"><i style="width:'+barW+'%;background:'+barColor+'"></i></div></div>';
+      });
+      if (c.rows.length === 0) rowsHTML = '<div class="breakdown-empty">No members yet.</div>';
+      els.memberList.innerHTML = rowsHTML;
+      let footerHTML = '<div>Total</div>';
+      ORDER.forEach(key => {
+        const v = c.tabTotals[key] || 0;
+        const isDed = key === 'deductions';
+        const display = isDed ? fmtDeduct(v) : fmt(v);
+        let cls = 'cell'; if (Math.abs(v) < 0.005) cls += ' zero'; else if (isDed) cls += ' neg';
+        footerHTML += '<div class="'+cls+'">'+display+'</div>';
+      });
+      footerHTML += '<div class="total-cell">'+fmt(c.grand)+'</div>';
+      els.memberTotals.innerHTML = footerHTML;
+      let msg, cls;
+      if (c.rows.length === 0) { msg = 'No data yet.'; cls = 'warn'; }
+      else if (Math.abs(c.grand) < 0.005) { msg = 'Enter amounts in any tab.'; cls = 'warn'; }
+      else { msg = '✓ Consolidated across '+c.rows.length+' member'+(c.rows.length===1?'':'s')+'. Household total: '+fmt(c.grand)+'.'; cls = 'ok'; }
+      els.status.textContent = msg; els.status.className = 'status ' + cls;
+    }
+    if (els.currency) els.currency.addEventListener('change', render);
+    onChange(render);
+    els.copyBtn.addEventListener('click', () => {
+      const c = combine();
+      const lines = [];
+      lines.push('📊 HOUSEHOLD BILL SUMMARY'); lines.push(''); lines.push('By category:');
+      ORDER.forEach(key => { const meta = META[key]; const v = c.tabTotals[key] || 0; const display = key==='deductions'?fmtDeduct(v):fmt(v); lines.push('• '+meta.label+': '+display); });
+      lines.push(''); lines.push('Household total: '+fmt(c.grand)); lines.push('');
+      lines.push('Per member (largest total due first):');
+      c.rows.forEach(r => {
+        const parts = [];
+        ORDER.forEach(key => { const v = r.cells[key] || 0; if (Math.abs(v)<0.005) return; const display = key==='deductions'?fmtDeduct(v):fmt(v); parts.push(META[key].short+' '+display); });
+        if (parts.length === 0) parts.push('no activity');
+        lines.push('• '+r.name+' — '+parts.join(' · ')+' — Total due '+fmt(r.total));
+      });
+      copyText(els.copyBtn, lines.join('\n'));
+    });
+    render();
+  }
+
+  function copyText(btn, text) {
+    const done = () => { const o = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => btn.textContent = o, 1600); };
+    const fallback = () => { const ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy'); done();}catch(e){} document.body.removeChild(ta); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(fallback);
+    else fallback();
+  }
+  function addMonths(isoDate, n) { const d = new Date(isoDate+'T00:00:00'); d.setMonth(d.getMonth()+n); return toISO(d); }
+  function currentCycleDates() {
+    const now = new Date(); const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+    let startY, startM;
+    if (d >= 15) { startY = y; startM = m; }
+    else { if (m === 0) { startY = y-1; startM = 11; } else { startY = y; startM = m-1; } }
+    const start = `${startY}-${pad2(startM+1)}-15`;
+    let endY = startY, endM = startM+1;
+    if (endM > 11) { endM = 0; endY++; }
+    const end = `${endY}-${pad2(endM+1)}-14`;
+    return { start, end };
+  }
+
+  /* ====== BOOT ====== */
+  const DEFAULT_NAMES = ['Ron','Rej','Hera','Shih','James','Jerry'];
+  const RENT_SHARES = { Ron:3000, Rej:3000, Hera:0, Shih:2500, James:2500, Jerry:3000 };
+
+  const waterApp = createBillApp(document.querySelector('.tab-panel[data-app="water"]'),
+    { defaultNames:DEFAULT_NAMES, label:'Water bill', titlePrefix:'💧 WATER BILL SPLIT', summaryKey:'water' });
+  const electricApp = createMeralcoApp(document.querySelector('.tab-panel[data-app="electric"]'),
+    { defaultNames:DEFAULT_NAMES, titlePrefix:'⚡ MERALCO BILL SPLIT' });
+  const rentApp = createRentApp(document.querySelector('.tab-panel[data-app="rent"]'),
+    { defaultNames:DEFAULT_NAMES, defaultShares:RENT_SHARES });
+  const othersApp = createOthersApp(document.querySelector('.tab-panel[data-app="others"]'),
+    { defaultNames:DEFAULT_NAMES });
+  const deductionsApp = createDeductionsApp(document.querySelector('.tab-panel[data-app="deductions"]'),
+    { defaultNames:DEFAULT_NAMES });
+  createSummaryApp(document.querySelector('.tab-panel[data-app="summary"]'),
+    { apps:[waterApp, electricApp, rentApp, othersApp, deductionsApp] });
+
+  const globalStart = document.getElementById('globalStart');
+  const globalEnd = document.getElementById('globalEnd');
+  const globalWater = document.getElementById('globalWater');
+  const globalMeralco = document.getElementById('globalMeralco');
+  const globalRent = document.getElementById('globalRent');
+  const globalCurrency = document.getElementById('globalCurrency');
+  const globalPeriodNote = document.getElementById('globalPeriodNote');
+  const globalDaysGrid = document.getElementById('globalDaysGrid');
+  const newMemberName = document.getElementById('newMemberName');
+  const addMemberBtn = document.getElementById('addMemberBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const exportBtn = document.getElementById('exportBtn');
+
+  globalStart.value = DEFAULT_START; globalEnd.value = DEFAULT_END;
+  globalWater.value = 0; globalMeralco.value = 0; globalRent.value = DEFAULT_RENT;
+  globalCurrency.value = '₱';
+
+  const pushWaterBill = v => waterApp.setBill(Number(v));
+  const pushMeralcoBill = v => electricApp.setBill(Number(v));
+  const pushRent = v => rentApp.setBill(Number(v));
+
+  function pushCurrency(sym) {
+    document.querySelectorAll('[data-role="currency"]').forEach(sel => {
+      if (sel.value === sym) return;
+      sel.value = sym;
+      sel.dispatchEvent(new Event('change', { bubbles:false }));
+    });
+  }
+  function syncGlobalAmounts() {
+    globalAmounts.water = Number(globalWater.value) || 0;
+    globalAmounts.electric = Number(globalMeralco.value) || 0;
+    globalAmounts.rent = Number(globalRent.value) || 0;
+    globalAmounts.currency = globalCurrency.value;
+  }
+  function updateGlobalPeriodNote() {
+    if (!globalStart.value || !globalEnd.value) { globalPeriodNote.textContent = ''; return; }
+    const s = new Date(globalStart.value+'T00:00:00'); const e = new Date(globalEnd.value+'T00:00:00');
+    if (isNaN(s) || isNaN(e)) { globalPeriodNote.textContent = ''; return; }
+    const days = Math.round((e-s)/86400000)+1;
+    if (days <= 0) { globalPeriodNote.textContent = '⚠ End date must come after start date.'; globalPeriodNote.className = 'note warn'; return; }
+    globalPeriodNote.textContent = prettyDate(globalStart.value)+'  →  '+prettyDate(globalEnd.value)+'  ·  '+days+' day'+(days===1?'':'s');
+    globalPeriodNote.className = 'note';
+  }
+  function broadcastGlobalDates() { dateSync.emit(globalStart.value, globalEnd.value, 'global'); updateGlobalPeriodNote(); }
+
+  globalStart.addEventListener('input', broadcastGlobalDates);
+  globalStart.addEventListener('change', broadcastGlobalDates);
+  globalEnd.addEventListener('input', broadcastGlobalDates);
+  globalEnd.addEventListener('change', broadcastGlobalDates);
+  dateSync.register('global', (start, end) => { if (globalStart.value === start && globalEnd.value === end) return; globalStart.value = start; globalEnd.value = end; updateGlobalPeriodNote(); });
+  globalWater.addEventListener('input', () => { pushWaterBill(Number(globalWater.value)); syncGlobalAmounts(); });
+  globalWater.addEventListener('change', () => { pushWaterBill(Number(globalWater.value)); syncGlobalAmounts(); });
+  globalMeralco.addEventListener('input', () => { pushMeralcoBill(Number(globalMeralco.value)); syncGlobalAmounts(); });
+  globalMeralco.addEventListener('change', () => { pushMeralcoBill(Number(globalMeralco.value)); syncGlobalAmounts(); });
+  globalRent.addEventListener('input', () => { pushRent(Number(globalRent.value)); syncGlobalAmounts(); });
+  globalRent.addEventListener('change', () => { pushRent(Number(globalRent.value)); syncGlobalAmounts(); });
+  globalCurrency.addEventListener('change', () => { pushCurrency(globalCurrency.value); syncGlobalAmounts(); });
+
+  (function wireReverseSync() {
+    const w = document.querySelector('.tab-panel[data-app="water"] [data-role="bill"]');
+    if (w) w.addEventListener('input', () => { if (Number(globalWater.value) !== Number(w.value)) { globalWater.value = w.value; syncGlobalAmounts(); } });
+    const m = document.querySelector('.tab-panel[data-app="electric"] [data-role="bill"]');
+    if (m) m.addEventListener('input', () => { if (Number(globalMeralco.value) !== Number(m.value)) { globalMeralco.value = m.value; syncGlobalAmounts(); } });
+    const r = document.querySelector('.tab-panel[data-app="rent"] [data-role="bill"]');
+    if (r) r.addEventListener('input', () => { if (Number(globalRent.value) !== Number(r.value)) { globalRent.value = r.value; syncGlobalAmounts(); } });
+    document.querySelectorAll('.tab-panel [data-role="currency"]').forEach(sel => {
+      sel.addEventListener('change', () => { const sym = sel.value; if (globalCurrency.value !== sym) { globalCurrency.value = sym; pushCurrency(sym); syncGlobalAmounts(); } });
+    });
+  })();
+
+  document.querySelectorAll('.cycle-nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const c = Number(btn.dataset.cycle);
+      let newStart, newEnd;
+      if (c === 0) { const cy = currentCycleDates(); newStart = cy.start; newEnd = cy.end; }
+      else { newStart = addMonths(globalStart.value, c); newEnd = addMonths(globalEnd.value, c); }
+      globalStart.value = newStart; globalEnd.value = newEnd; broadcastGlobalDates();
+    });
+  });
+
+  const globalDayInputs = {};
+  const globalDayValues = {};
+  const globalMemberNames = [];
+
+  function addDayRow(name) {
+    const idx = globalMemberNames.indexOf(name);
+    const color = COLORS[idx % COLORS.length];
+    const row = document.createElement('div');
+    row.className = 'global-day-row';
+    row.innerHTML = '<span class="avatar" style="background:'+hexA(color,.16)+';color:'+color+';border-color:'+hexA(color,.38)+'">'+escapeHtml((name[0]||'?').toUpperCase())+'</span>'+
+      '<span class="gd-name">'+escapeHtml(name)+'</span>'+
+      '<div class="gd-stepper"><button type="button" class="gd-step" data-d="-1">−</button>'+
+      '<input type="number" class="gd-days" min="0" max="999" step="1" value="0">'+
+      '<button type="button" class="gd-step" data-d="1">+</button></div>';
+    const input = row.querySelector('.gd-days');
+    globalDayInputs[name] = input;
+    if (globalDayValues[name] == null) globalDayValues[name] = 0;
+    input.value = globalDayValues[name];
+    input.addEventListener('input', () => { const v = Math.min(Math.max(Math.round(Number(input.value)||0),0),999); globalDayValues[name] = v; broadcastGlobalDays(); });
+    input.addEventListener('blur', () => { input.value = globalDayValues[name] || 0; });
+    row.querySelectorAll('.gd-step').forEach(b => b.addEventListener('click', () => {
+      const cur = globalDayValues[name] || 0;
+      const v = Math.min(Math.max(cur + Number(b.dataset.d), 0), 999);
+      input.value = v; globalDayValues[name] = v; broadcastGlobalDays();
+    }));
+    globalDaysGrid.appendChild(row);
+  }
+  function buildGlobalDaysGrid() {
+    if (!globalDaysGrid) return;
+    globalDaysGrid.innerHTML = '';
+    Object.keys(globalDayInputs).forEach(k => delete globalDayInputs[k]);
+    globalMemberNames.forEach(name => addDayRow(name));
+  }
+  function broadcastGlobalDays() { daysSync.emit(Object.assign({}, globalDayValues), 'global'); }
+  function applyGlobalDaysMap(map) {
+    Object.keys(map).forEach(name => {
+      const input = globalDayInputs[name];
+      if (input && globalDayValues[name] !== map[name]) { globalDayValues[name] = map[name]; input.value = map[name]; }
+    });
+  }
+  function addGlobalMember(rawName) {
+    const name = (rawName||'').trim();
+    if (!name) return false;
+    if (globalMemberNames.indexOf(name) !== -1) return false;
+    globalMemberNames.push(name);
+    waterApp.addMemberByName(name);
+    electricApp.addMemberByName(name);
+    rentApp.addMemberByName(name);
+    othersApp.addMemberByName(name);
+    deductionsApp.addMemberByName(name);
+    addDayRow(name);
+    broadcastGlobalDays();
+    return true;
+  }
+  DEFAULT_NAMES.forEach(n => globalMemberNames.push(n));
+  buildGlobalDaysGrid();
+  daysSync.register('global', applyGlobalDaysMap);
+  addMemberBtn.addEventListener('click', () => {
+    const name = newMemberName.value.trim();
+    if (!name) return;
+    const ok = addGlobalMember(name);
+    if (ok) { newMemberName.value = ''; newMemberName.focus(); showToast('Added ' + name + ' across all tabs', 'ok'); }
+    else { newMemberName.style.borderColor = 'rgba(248,113,113,.6)'; setTimeout(() => newMemberName.style.borderColor = '', 700); }
+  });
+  newMemberName.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addMemberBtn.click(); } });
+
+  updateGlobalPeriodNote();
+  pushWaterBill(0); pushMeralcoBill(0); pushRent(DEFAULT_RENT); pushCurrency('₱'); syncGlobalAmounts();
+
+  function buildStateSnapshot() {
+    return { version:2, savedAt: new Date().toISOString(),
+      period: { start: globalStart.value, end: globalEnd.value },
+      currency: globalCurrency.value,
+      globalWater: globalWater.value, globalMeralco: globalMeralco.value, globalRent: globalRent.value,
+      globalDays: Object.assign({}, globalDayValues),
+      globalMembers: globalMemberNames.slice(),
+      water: waterApp.getState(), electric: electricApp.getState(),
+      rent: rentApp.getState(), others: othersApp.getState(), deductions: deductionsApp.getState() };
+  }
+  function saveAllState(silent) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(buildStateSnapshot())); if (!silent) showToast('Saved to browser storage', 'ok'); return true; }
+    catch (e) { if (!silent) showToast('Could not save', 'bad'); return false; }
+  }
+  let saveTimer = null;
+  function scheduleSave() { if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; saveAllState(true); }, 1500); }
+  onChange(scheduleSave);
+  saveBtn.addEventListener('click', () => saveAllState(false));
+  document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveAllState(false); } });
+
+  (function restoreState() {
+    let raw = null;
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (!raw) return;
+    let state = null;
+    try { state = JSON.parse(raw); } catch (e) { return; }
+    if (!state) return;
+    try {
+      if (state.period) { if (state.period.start) globalStart.value = state.period.start; if (state.period.end) globalEnd.value = state.period.end; }
+      if (state.currency) globalCurrency.value = state.currency;
+      if (state.globalWater != null) globalWater.value = state.globalWater;
+      if (state.globalMeralco != null) globalMeralco.value = state.globalMeralco;
+      if (state.globalRent != null) globalRent.value = state.globalRent;
+      if (Array.isArray(state.globalMembers) && state.globalMembers.length > 0) {
+        globalMemberNames.length = 0;
+        state.globalMembers.forEach(n => globalMemberNames.push(n));
+      }
+      if (state.water) waterApp.setState(state.water);
+      if (state.electric) electricApp.setState(state.electric);
+      if (state.rent) rentApp.setState(state.rent);
+      if (state.others) othersApp.setState(state.others);
+      if (state.deductions) deductionsApp.setState(state.deductions);
+      buildGlobalDaysGrid();
+      if (state.globalDays) Object.keys(state.globalDays).forEach(k => { if (globalDayInputs[k]) { globalDayValues[k] = state.globalDays[k]; globalDayInputs[k].value = state.globalDays[k]; } });
+      broadcastGlobalDates();
+      pushCurrency(globalCurrency.value);
+      updateGlobalPeriodNote();
+      syncGlobalAmounts();
+      showToast('Restored saved data', 'ok');
+    } catch (e) { console.warn(e); }
+  })();
+
+  const exportModal = document.getElementById('exportModal');
+  const exportPreview = document.getElementById('exportPreview');
+  const exportMeta = document.getElementById('exportMeta');
+  const exportClose = document.getElementById('exportClose');
+  const exportCopyBtn = document.getElementById('exportCopyBtn');
+  const exportDownloadBtn = document.getElementById('exportDownloadBtn');
+  const exportPrintBtn = document.getElementById('exportPrintBtn');
+
+  function buildExportText() {
+    const cur = globalCurrency.value;
+    const fmtM = v => { const n = Number.isFinite(v)?v:0; return cur+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); };
+    const fmtSigned = v => { const n = Number.isFinite(v)?v:0; if (Math.abs(n)<0.005) return fmtM(0); return (n>0?'+':'−')+fmtM(Math.abs(n)); };
+    const padR = (s,w) => { s = String(s); while (s.length < w) s = ' ' + s; return s; };
+    const padL = (s,w) => { s = String(s); while (s.length < w) s = s + ' '; return s; };
+    const lines = [];
+    const SEP = '════════════════════════════════════════════════════════════════════════';
+    const DASH = '────────────────────────────────────────────────────────────────────────';
+    const periodStart = globalStart.value, periodEnd = globalEnd.value;
+    let periodDays = 0;
+    if (periodStart && periodEnd) { const s = new Date(periodStart+'T00:00:00'); const e = new Date(periodEnd+'T00:00:00'); if (!isNaN(s) && !isNaN(e)) periodDays = Math.max(0, Math.round((e-s)/86400000)+1); }
+    lines.push(SEP); lines.push('                HATIAN — HOUSEHOLD BILLS'); lines.push('              Fair share for every housemate'); lines.push(SEP); lines.push('');
+    lines.push('Billing period:  ' + prettyDate(periodStart) + '  →  ' + prettyDate(periodEnd));
+    lines.push('Total days:      ' + periodDays);
+    lines.push('Generated:       ' + new Date().toLocaleString()); lines.push('');
+
+    const waterSnap = waterApp.getSnapshot();
+    const electricSnap = electricApp.getSnapshot();
+    const rentSnap = rentApp.getSnapshot();
+    const othersSnap = othersApp.getSnapshot();
+    const deductionsSnap = deductionsApp.getSnapshot();
+    const waterTotal = waterSnap.bill, electricTotal = electricSnap.bill;
+    const rentTotal = rentSnap.bill, othersTotal = othersSnap.total;
+    const deductionsTotal = deductionsSnap.total;
+
+    lines.push(DASH); lines.push('HOUSEHOLD TOTALS'); lines.push(DASH);
+    lines.push('  ' + padL('Water Bill', 22) + padR(fmtM(waterTotal), 18));
+    lines.push('  ' + padL('Meralco Bill', 22) + padR(fmtM(electricTotal), 18));
+    lines.push('  ' + padL('House Rent', 22) + padR(fmtM(rentTotal), 18));
+    lines.push('  ' + padL('Other Expenses', 22) + padR(fmtM(othersTotal), 18));
+    lines.push('  ' + padL('Deductions', 22) + padR('−'+fmtM(deductionsTotal), 18));
+    lines.push('  ' + padL('', 22) + padR('───────────────', 18));
+    const grandTotal = waterTotal + electricTotal + rentTotal + othersTotal - deductionsTotal;
+    lines.push('  ' + padL('Grand Total', 22) + padR(fmtM(grandTotal), 18)); lines.push('');
+
+    lines.push(DASH); lines.push('💧 WATER BILL — '+fmtM(waterTotal)); lines.push(DASH);
+    if (waterSnap.members.length === 0) lines.push('  (no members)');
+    else {
+      lines.push('  ' + padL('Member', 20) + padR('Days', 8) + padR('Share', 16));
+      waterSnap.members.forEach(m => lines.push('  ' + padL(m.name, 20) + padR(String(m.days), 8) + padR(fmtM(m.share), 16)));
+    }
+    lines.push('');
+
+    lines.push(DASH); lines.push('⚡ MERALCO BILL — '+fmtM(electricTotal)); lines.push(DASH);
+    if (electricSnap.rooms && electricSnap.rooms.length > 0) {
+      lines.push('  Rooms:');
+      electricSnap.rooms.forEach(r => {
+        const mode = (r.type==='shared'&&r.hasAC&&r.members.length>1)?(' · '+r.mode):'';
+        const acTxt = r.hasAC ? ('AC ×'+trimNum(r.acMult)+mode) : 'No AC';
+        lines.push('    🛏️ ' + r.name + ' (' + r.type + ' · ' + acTxt + ')');
+        r.members.forEach(m => lines.push('        • ' + m.name + ' — ' + m.days + 'd'));
+      });
+      lines.push('');
+    }
+    const unassignedM = electricSnap.members.filter(m => !m.room);
+    if (unassignedM.length > 0) {
+      lines.push('  Unassigned members:');
+      unassignedM.forEach(m => lines.push('    • ' + m.name + ' — ' + m.days + 'd'));
+      lines.push('');
+    }
+    if (electricSnap.members.length > 0) {
+      lines.push('  ' + padL('Member', 18) + padR('Days', 6) + padR('Weight', 8) + padR('Room', 14) + padR('Share', 16));
+      electricSnap.members.forEach(m => {
+        const room = m.room || '—';
+        lines.push('  ' + padL(m.name, 18) + padR(String(m.days), 6) + padR(String(trimNum(m.weight)), 8) + padR(room, 14) + padR(fmtM(m.share), 16));
+      });
+      lines.push('  ' + padL('Total weighted days:', 20) + padR(String(trimNum(electricSnap.totalWeight)), 8));
+    }
+    lines.push('');
+
+    lines.push(DASH); lines.push('🏠 HOUSE RENT — '+fmtM(rentTotal)); lines.push(DASH);
+    if (rentSnap.members.length === 0) lines.push('  (no members)');
+    else rentSnap.members.forEach(m => lines.push('  ' + padL(m.name, 20) + padR(fmtM(m.amount), 16)));
+    lines.push('');
+
+    lines.push(DASH); lines.push('📋 OTHER EXPENSES — '+fmtM(othersTotal)); lines.push(DASH);
+    if (othersSnap.expenses.length === 0) lines.push('  (no expenses)');
+    else {
+      lines.push('  Items:');
+      othersSnap.expenses.forEach(e => {
+        lines.push('    • ' + e.description + ' — ' + fmtM(e.amount) + ' — paid by ' + e.paidBy);
+        lines.push('      split among: ' + (e.participants.length ? e.participants.join(', ') : 'nobody'));
+      });
+      lines.push(''); lines.push('  Per-member share / paid:');
+      othersSnap.members.forEach(m => {
+        if (Math.abs(m.share)<0.005 && Math.abs(m.paid)<0.005) return;
+        const net = m.paid - m.share;
+        lines.push('  ' + padL(m.name, 20) + padR('share '+fmtM(m.share), 24) + padR('paid '+fmtM(m.paid), 24) + '  net '+fmtSigned(net));
+      });
+    }
+    lines.push('');
+
+    lines.push(DASH); lines.push('💸 DEDUCTIONS — '+fmtM(deductionsTotal)); lines.push(DASH);
+    if (deductionsSnap.manual.length === 0 && deductionsSnap.auto.length === 0) lines.push('  (no deductions)');
+    else {
+      if (deductionsSnap.manual.length > 0) {
+        lines.push('  Manual entries:');
+        deductionsSnap.manual.forEach(d => lines.push('    • '+d.name+' — '+(d.description||'(no description)')+' — '+(d.date?prettyDate(d.date):'—')+' — '+fmtM(d.amount)));
+        lines.push('');
+      }
+      if (deductionsSnap.auto.length > 0) {
+        lines.push('  Auto-tracked from Others tab:');
+        deductionsSnap.auto.forEach(d => lines.push('    • '+d.name+' — '+(d.description||'(no description)')+' — '+(d.date?prettyDate(d.date):'—')+' — '+fmtM(d.amount)));
+        lines.push('');
+      }
+    }
+    lines.push('');
+
+    lines.push(SEP); lines.push('📊 PER-MEMBER SUMMARY (sorted by largest total due)'); lines.push(SEP); lines.push('');
+    const memberMap = new Map();
+    const ensure = name => { if (!memberMap.has(name)) memberMap.set(name, { name, water:0, electric:0, rent:0, others:0, deductions:0, total:0 }); return memberMap.get(name); };
+    waterSnap.members.forEach(m => ensure(m.name).water = m.share);
+    electricSnap.members.forEach(m => ensure(m.name).electric = m.share);
+    rentSnap.members.forEach(m => ensure(m.name).rent = m.amount);
+    othersSnap.members.forEach(m => ensure(m.name).others = m.share);
+    deductionsSnap.perMember.forEach(p => ensure(p.name).deductions = p.total);
+    const rows = Array.from(memberMap.values()).map(r => { r.total = r.water + r.electric + r.rent + r.others - r.deductions; return r; });
+    rows.sort((a,b) => { if (Math.abs(b.total-a.total)>0.005) return b.total-a.total; return a.name.localeCompare(b.name); });
+    lines.push('  ' + padL('Member', 14) + padR('Water', 13) + padR('Meralco', 13) + padR('Rent', 13) + padR('Others', 13) + padR('Deduct', 13) + padR('Total Due', 14));
+    lines.push('  ' + '─'.repeat(93));
+    rows.forEach(r => {
+      lines.push('  ' + padL(r.name, 14) + padR(fmtM(r.water), 13) + padR(fmtM(r.electric), 13) + padR(fmtM(r.rent), 13) + padR(fmtM(r.others), 13) + padR('−'+fmtM(r.deductions), 13) + padR(fmtM(r.total), 14));
+    });
+    lines.push('  ' + '─'.repeat(93));
+    const colTotal = { water:0, electric:0, rent:0, others:0, deductions:0, total:0 };
+    rows.forEach(r => { colTotal.water += r.water; colTotal.electric += r.electric; colTotal.rent += r.rent; colTotal.others += r.others; colTotal.deductions += r.deductions; colTotal.total += r.total; });
+    lines.push('  ' + padL('TOTAL', 14) + padR(fmtM(colTotal.water), 13) + padR(fmtM(colTotal.electric), 13) + padR(fmtM(colTotal.rent), 13) + padR(fmtM(colTotal.others), 13) + padR('−'+fmtM(colTotal.deductions), 13) + padR(fmtM(colTotal.total), 14));
+    lines.push('');
+    lines.push('Legend:');
+    lines.push('  • Water shares are computed from each member\'s days stayed.');
+    lines.push('  • Meralco: rooms share AC cost by room-level multiplier.');
+    lines.push('  • Together mode = same dates (layered split). Apart mode = different dates.');
+    lines.push('  • Deductions column shows amounts subtracted from each member\'s total due.');
+    lines.push('');
+    lines.push('Generated by Hatian — Fair share for every housemate');
+    lines.push('');
+    return lines.join('\n');
+  }
+  function openExportModal() {
+    exportPreview.textContent = buildExportText();
+    exportMeta.textContent = '· ' + prettyDate(globalStart.value) + ' → ' + prettyDate(globalEnd.value);
+    exportModal.classList.add('open'); document.body.style.overflow = 'hidden';
+  }
+  function closeExportModal() { exportModal.classList.remove('open'); document.body.style.overflow = ''; }
+  exportBtn.addEventListener('click', openExportModal);
+  exportClose.addEventListener('click', closeExportModal);
+  exportModal.addEventListener('click', e => { if (e.target === exportModal) closeExportModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && exportModal.classList.contains('open')) closeExportModal(); });
+  exportCopyBtn.addEventListener('click', () => { copyText(exportCopyBtn, buildExportText()); showToast('Breakdown copied to clipboard', 'ok'); });
+  exportDownloadBtn.addEventListener('click', () => {
+    try {
+      const blob = new Blob([buildExportText()], { type:'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'hatian-household-bills-' + new Date().toISOString().slice(0,10) + '.txt';
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 120);
+      showToast('Downloaded breakdown', 'ok');
+    } catch (e) { showToast('Download failed', 'bad'); }
+  });
+  exportPrintBtn.addEventListener('click', () => {
+    const text = buildExportText();
+    const w = window.open('', '_blank');
+    if (!w) { showToast('Popup blocked', 'warn'); return; }
+    const html = '<!DOCTYPE html><html><head><title>Hatian — Household Bills</title><style>body{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.5;padding:24px;margin:0;color:#111;background:#fff}pre{white-space:pre;margin:0}@media print{body{padding:0}@page{margin:12mm}}</style></head><body><pre>'+escapeHtml(text)+'</pre></body></html>';
+    w.document.open(); w.document.write(html); w.document.close();
+    setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 300);
+  });
+
+  const heroLogo = document.getElementById('heroLogo');
+  const heroIcon = document.getElementById('heroIcon');
+  const heroTitle = document.getElementById('heroTitle');
+  const heroSub = document.getElementById('heroSub');
+  const HERO = {
+    water: { icon:'💧', title:'Water Bill Splitter', sub:'Split the water bill fairly — everyone pays for the days they actually stayed.' },
+    electric: { icon:'⚡', title:'Meralco Bill Splitter', sub:'Room-based electricity splitting — group members into rooms, each with its own AC setting.' },
+    rent: { icon:'🏠', title:'House Rent Splitter', sub:'Assign each member a fixed share of the monthly rent.' },
+    others: { icon:'📋', title:'Others Bill Splitter', sub:'Track and split shared expenses. Whoever pays gets auto-tracked in Deductions.' },
+    deductions: { icon:'💸', title:'Deductions', sub:'Quick-add presets for Water/Meralco/Rent, plus auto-tracked Others entries.' },
+    summary: { icon:'📊', title:'Consolidated Summary', sub:'Every house member\'s totals rolled up across all tabs — sorted by largest total due.' }
+  };
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.tab-panel');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.tab;
+      tabs.forEach(b => { const on = b === btn; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+      panels.forEach(p => p.classList.toggle('active', p.dataset.app === id));
+      const h = HERO[id];
+      heroIcon.textContent = h.icon;
+      heroTitle.textContent = h.title;
+      heroSub.textContent = h.sub;
+      heroLogo.classList.toggle('electric', id === 'electric');
+      heroLogo.classList.toggle('rent', id === 'rent');
+      heroLogo.classList.toggle('others', id === 'others');
+      heroLogo.classList.toggle('deductions', id === 'deductions');
+      heroLogo.classList.toggle('summary', id === 'summary');
+      document.body.classList.toggle('tab-electric', id === 'electric');
+      document.body.classList.toggle('tab-rent', id === 'rent');
+      document.body.classList.toggle('tab-others', id === 'others');
+      document.body.classList.toggle('tab-deductions', id === 'deductions');
+      document.body.classList.toggle('tab-summary', id === 'summary');
+    });
+  });
+
+})();
+</script>
+</body>
+</html>
