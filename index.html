@@ -1758,8 +1758,7 @@
     </div>
     <div class="modal-body"><pre id="exportPreview">Loading…</pre></div>
     <div class="modal-foot">
-      <button class="btn" type="button" id="exportCopyBtn">📋 Copy</button>
-      <button class="btn" type="button" id="exportDownloadBtn">⬇ Download .txt</button>
+      <button class="btn" type="button" id="exportDownloadBtn">⬇ Download PDF</button>
       <button class="btn primary" type="button" id="exportPrintBtn">🖨 Print / PDF</button>
     </div>
   </div>
@@ -1918,6 +1917,8 @@
 <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <!-- Theme toggle logic -->
 <script>
@@ -2020,6 +2021,54 @@
     toastWrap.appendChild(el);
     setTimeout(() => el.remove(), 2900);
   }
+
+  /* ====== SNAPSHOT (screenshot) OF A CARD ====== */
+  async function snapshotCard(btn) {
+    const card = btn.closest('.card');
+    if (!card) { showToast('Nothing to capture', 'bad'); return; }
+    if (typeof window.html2canvas !== 'function') { showToast('Screenshot library not loaded', 'bad'); return; }
+    const origVis = btn.style.visibility;
+    const origDisabled = btn.disabled;
+    btn.style.visibility = 'hidden';
+    btn.disabled = true;
+    try {
+      await new Promise(r => setTimeout(r, 60));
+      const canvas = await window.html2canvas(card, {
+        backgroundColor: null,
+        scale: Math.min(window.devicePixelRatio || 1, 2),
+        useCORS: true,
+        logging: false
+      });
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      if (!blob) throw new Error('toBlob returned null');
+      let copied = false;
+      try {
+        if (navigator.clipboard && window.ClipboardItem && window.isSecureContext) {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          copied = true;
+        }
+      } catch (e) { copied = false; }
+      if (copied) {
+        showToast('Screenshot copied — paste anywhere', 'ok');
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'hatian-breakdown-' + new Date().toISOString().slice(0,10) + '.png';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 200);
+        showToast('Screenshot downloaded', 'warn');
+      }
+    } catch (e) {
+      console.error('Snapshot failed', e);
+      showToast('Snapshot failed', 'bad');
+    } finally {
+      btn.style.visibility = origVis;
+      btn.disabled = origDisabled;
+    }
+  }
+  window.HatianSnapshot = snapshotCard;
 
   /* ====== MEMBER AVATARS (Supabase Storage + local cache) ====== */
   const AVATAR_KEY = 'hatian-member-avatars-v1';
@@ -2967,6 +3016,10 @@
       const card = document.createElement('div');
       card.className = 'room-card' + (room.hasAC ? '' : ' no-ac');
       card.dataset.roomMembers = group.map(p => (p.name || '').trim()).filter(Boolean).join('||');
+      // Hide the × multiplier when AC is off or we're in kWh mode.
+      const hideMult = (calcMode === 'kwh' || !room.hasAC);
+      // Hide the Together/Apart mode selector when the room is Solo or we're in kWh mode.
+      const hideMode = (calcMode === 'kwh' || room.type === 'solo');
       card.innerHTML = `
         <div class="room-header">
           <span class="rh-icon">🛏️</span>
@@ -2980,11 +3033,11 @@
               <input type="checkbox" class="rh-ac-check"${room.hasAC ? ' checked' : ''}>
               <span>AC</span>
             </label>
-            <div class="rh-mult-field${room.hasAC ? ' on' : ''}" style="${calcMode === 'kwh' ? 'display:none' : ''}">
+            <div class="rh-mult-field${room.hasAC ? ' on' : ''}" style="${hideMult ? 'display:none' : ''}">
               <span class="rh-mult-label">×</span>
               <input type="number" class="rh-mult" min="1" max="10" step="0.1" value="${trimNum(room.acMult)}"${room.hasAC ? '' : ' disabled'}>
             </div>
-            <select class="rh-mode" style="${calcMode === 'kwh' ? 'display:none' : ''}"${(!room.hasAC || room.type === 'solo' || group.length < 2) ? ' disabled' : ''}>
+            <select class="rh-mode" style="${hideMode ? 'display:none' : ''}"${(!room.hasAC || room.type === 'solo' || group.length < 2) ? ' disabled' : ''}>
               <option value="together"${room.mode === 'together' ? ' selected' : ''}>Together</option>
               <option value="apart"${room.mode === 'apart' ? ' selected' : ''}>Apart</option>
             </select>
@@ -4428,6 +4481,13 @@
   }
 
   function copyText(btn, text) {
+    // "Copy breakdown" buttons now take a screenshot of the surrounding
+    // summary card (excluding the button itself) instead of copying text.
+    if (btn && btn.dataset && btn.dataset.role === 'copySummary') {
+      snapshotCard(btn);
+      return;
+    }
+    // Legacy text-copy path (kept as a fallback for any other callers).
     const done = () => { const o = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => btn.textContent = o, 1600); };
     const fallback = () => { const ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy'); done();}catch(e){} document.body.removeChild(ta); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(fallback);
@@ -4445,7 +4505,7 @@
       const startEl = document.getElementById('globalStart');
       const endEl   = document.getElementById('globalEnd');
       const start = startEl ? startEl.value : DEFAULT_START;
-      const end   = endEl   ? endEl.value : DEFAULT_END;
+      const end   = endEl   ? endEl.value   : DEFAULT_END;
       const dates = datesBetweenISO(start, end);
       if (periodLabelEl) {
         periodLabelEl.textContent = dates.length > 0
@@ -5076,7 +5136,6 @@
   const exportPreview = document.getElementById('exportPreview');
   const exportMeta = document.getElementById('exportMeta');
   const exportClose = document.getElementById('exportClose');
-  const exportCopyBtn = document.getElementById('exportCopyBtn');
   const exportDownloadBtn = document.getElementById('exportDownloadBtn');
   const exportPrintBtn = document.getElementById('exportPrintBtn');
   const compactToggle = document.getElementById('compactToggle');
@@ -5324,18 +5383,68 @@
   exportClose.addEventListener('click', closeExportModal);
   exportModal.addEventListener('click', e => { if (e.target === exportModal) closeExportModal(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && exportModal.classList.contains('open')) closeExportModal(); });
-  exportCopyBtn.addEventListener('click', () => { copyText(exportCopyBtn, buildExportText()); showToast('Breakdown copied', 'ok'); });
-  exportDownloadBtn.addEventListener('click', () => {
+
+  /* Download as an actual PDF file (auto-downloads, no print dialog). */
+  exportDownloadBtn.addEventListener('click', async function () {
+    if (!window.jspdf || !window.jspdf.jsPDF) { showToast('PDF library not loaded', 'bad'); return; }
+    if (typeof window.html2canvas !== 'function') { showToast('Screenshot library not loaded', 'bad'); return; }
+    const origLabel = exportDownloadBtn.textContent;
+    exportDownloadBtn.disabled = true;
+    exportDownloadBtn.textContent = '… generating';
     try {
-      const blob = new Blob([buildExportText()], { type:'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'hatian-household-bills-' + new Date().toISOString().slice(0,10) + '.txt';
-      document.body.appendChild(a); a.click();
-      setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 120);
-      showToast('Downloaded breakdown', 'ok');
-    } catch (e) { showToast('Download failed', 'bad'); }
+      const text = buildExportText();
+      // Render the text into an offscreen monospace container so we can
+      // capture box-drawing glyphs that standard PDF fonts don't support.
+      const wrap = document.createElement('div');
+      wrap.style.cssText =
+        'position:absolute;top:0;left:-99999px;background:#ffffff;color:#000000;' +
+        'padding:20px;font-family:ui-monospace,Menlo,Consolas,monospace;' +
+        'font-size:10px;line-height:1.35;white-space:pre;display:inline-block;';
+      wrap.textContent = text;
+      document.body.appendChild(wrap);
+      let canvas;
+      try {
+        canvas = await window.html2canvas(wrap, { backgroundColor: '#ffffff', scale: 2, logging: false });
+      } finally {
+        wrap.remove();
+      }
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 22;
+      const imgW = pageW - margin * 2;
+      const pxPerPt = canvas.width / imgW;
+      const pageContentH = pageH - margin * 2;
+      const pageContentPx = pageContentH * pxPerPt;
+      let rendered = 0;
+      let pageIdx = 0;
+      while (rendered < canvas.height) {
+        const sliceH = Math.min(pageContentPx, canvas.height - rendered);
+        const slice = document.createElement('canvas');
+        slice.width = canvas.width;
+        slice.height = sliceH;
+        const ctx = slice.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, slice.width, slice.height);
+        ctx.drawImage(canvas, 0, rendered, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+        const imgData = slice.toDataURL('image/png');
+        if (pageIdx > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', margin, margin, imgW, sliceH / pxPerPt);
+        rendered += sliceH;
+        pageIdx++;
+      }
+      pdf.save('hatian-household-bills-' + new Date().toISOString().slice(0,10) + '.pdf');
+      showToast('PDF downloaded', 'ok');
+    } catch (e) {
+      console.error('PDF download failed', e);
+      showToast('PDF download failed', 'bad');
+    } finally {
+      exportDownloadBtn.disabled = false;
+      exportDownloadBtn.textContent = origLabel;
+    }
   });
+
   exportPrintBtn.addEventListener('click', () => {
     const text = buildExportText();
     const w = window.open('', '_blank');
