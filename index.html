@@ -159,6 +159,13 @@
   .btn-ghost.signout:hover{background:linear-gradient(135deg,rgba(248,113,113,.26),rgba(248,113,113,.12));border-color:rgba(220,38,38,.65);color:#991b1b}
   .btn-ghost.signout .ico{font-size:14px}
 
+  /* ── Reset period button ────────────────────────────────── */
+  .btn-ghost.reset-period{border-color:rgba(220,38,38,.38);color:#b91c1c;background:linear-gradient(135deg,rgba(248,113,113,.12),rgba(248,113,113,.04));font-weight:700}
+  .btn-ghost.reset-period:hover{background:linear-gradient(135deg,rgba(248,113,113,.22),rgba(248,113,113,.10));border-color:rgba(220,38,38,.58);color:#991b1b}
+  .btn-ghost.reset-period .ico{font-size:14px}
+  [data-theme="dark"] .btn-ghost.reset-period{background:linear-gradient(135deg,rgba(248,113,113,.14),rgba(248,113,113,.05));color:#fca5a5;border-color:rgba(220,38,38,.5)}
+  [data-theme="dark"] .btn-ghost.reset-period:hover{background:linear-gradient(135deg,rgba(248,113,113,.26),rgba(248,113,113,.12))}
+
   .btn-ghost.admin-ghost{border-color:rgba(217,119,6,.42);color:#b45309;background:linear-gradient(135deg,rgba(251,191,36,.14),rgba(244,114,182,.06));font-weight:700;position:relative}
   .btn-ghost.admin-ghost:hover{background:linear-gradient(135deg,rgba(251,191,36,.26),rgba(244,114,182,.12));border-color:rgba(217,119,6,.62)}
   .btn-ghost.admin-ghost.on{background:linear-gradient(135deg,rgba(251,191,36,.32),rgba(244,114,182,.16));border-color:rgba(217,119,6,.72);color:#92400e}
@@ -1289,6 +1296,7 @@
     <div class="card-head">
       <h2>🏠 Household setup</h2>
       <div class="head-actions">
+        <button type="button" class="btn-ghost reset-period" id="resetPeriodBtn" title="Clear all entries for this billing period"><span class="ico">↺</span> Reset period</button>
         <button type="button" class="btn-ghost save" id="saveBtn" title="Save this period to the cloud"><span class="ico">☁️</span> Save to cloud</button>
         <button type="button" class="btn-ghost export" id="exportBtn"><span class="ico">📤</span> Export breakdown</button>
         <select class="period-select" id="periodSelect" title="Choose billing period"></select>
@@ -1388,7 +1396,7 @@
             </div>
             <div class="field">
               <label>Base load (kWh / person / day)</label>
-              <input type="text" data-role="baseKwh" inputmode="decimal" value="0.5" autocomplete="off">
+              <input type="text" data-role="baseKwh" inputmode="decimal" value="2.00" autocomplete="off">
             </div>
             <p class="kwh-note">Base load covers lights, fans, phone charging, etc. AC consumption is computed per room using HP, AC type (inverter / non-inverter), hours per day, and days on. Values are scaled to the actual bill you enter above.</p>
           </div>
@@ -2741,7 +2749,7 @@
     let roomSort = 'default';
     let calcMode = 'simple';
     let kwhRate = 14.7833;
-    let baseKwhPerPersonDay = 0.5;
+    let baseKwhPerPersonDay = 2;
     const HP_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0];
     const curSymbol = () => els.currency.value;
     const fmt = v => curSymbol() + NUM_FMT.format(Number.isFinite(v) ? v : 0);
@@ -3026,18 +3034,23 @@
       card.className = 'room-card' + (room.hasAC ? '' : ' no-ac');
       card.dataset.roomMembers = group.map(p => (p.name || '').trim()).filter(Boolean).join('||');
 
-      // The × multiplier only matters in "Weighted days" mode, but we
-      // always keep it visible whenever the room has AC so users can
-      // see & set it. In kWh mode it's shown disabled with a hint.
+      // The × multiplier and Together/Apart are ALWAYS editable when the
+      // room has AC — even in kWh mode — so admins can pre-configure them
+      // before switching modes. In kWh mode they are simply ignored by the
+      // calculator, which we communicate via the title tooltip.
       const hideMult    = !room.hasAC;
-      const multDisabled = (calcMode === 'kwh') || !room.hasAC;
+      const multDisabled = !room.hasAC;
 
       // Together/Apart only makes sense for shared rooms that have AC.
       const hideMode    = !room.hasAC || room.type === 'solo';
-      const modeDisabled = (calcMode === 'kwh') || !room.hasAC || room.type === 'solo' || group.length < 2;
+      const modeDisabled = !room.hasAC || room.type === 'solo' || group.length < 2;
 
-      const multTitle  = calcMode === 'kwh' ? 'Only applies in "Weighted days" mode' : 'AC multiplier — how much more this room consumes';
-      const modeTitle  = calcMode === 'kwh' ? 'Only applies in "Weighted days" mode' : 'Together shares AC cost by actual overlap · Apart charges each their own days';
+      const multTitle  = calcMode === 'kwh'
+        ? 'AC multiplier (used in "Weighted days" mode; kWh mode uses HP / hours below)'
+        : 'AC multiplier — how much more this room consumes';
+      const modeTitle  = calcMode === 'kwh'
+        ? 'Together/Apart (used in "Weighted days" mode; kWh mode splits by estimated consumption)'
+        : 'Together shares AC cost by actual overlap · Apart charges each their own days';
 
       // Build the × selector options, snapping to the closest preset.
       const curMult = clampMult(room.acMult);
@@ -5021,6 +5034,36 @@
       showToast('Not signed in — cannot save to cloud', 'warn');
     }
   });
+
+  /* ====== RESET PERIOD BUTTON ====== */
+  const resetPeriodBtn = document.getElementById('resetPeriodBtn');
+  if (resetPeriodBtn) {
+    resetPeriodBtn.addEventListener('click', async () => {
+      const perms = window.HatianPermissions || { isAdmin: true, memberName: '' };
+      if (!perms.isAdmin) { showToast('Only admins can reset a period', 'warn'); return; }
+      if (!window.confirm('Clear all entries for this billing period?\n\nThis removes all bills, days stayed, expenses, deductions, and member amounts for the selected period. Avatars and room layout are kept.\n\nThis cannot be undone.')) return;
+      const orig = resetPeriodBtn.innerHTML;
+      resetPeriodBtn.disabled = true;
+      resetPeriodBtn.innerHTML = '<span class="ico">…</span> Resetting';
+      try {
+        const label = prettyDate(globalStart.value) + ' → ' + prettyDate(globalEnd.value);
+        resetPeriodState();
+        saveAllState(true);
+        writeAudit('Period reset', label, 'All entries cleared');
+        if (window.HatianCloud && typeof window.HatianCloud.push === 'function') {
+          await window.HatianCloud.push(true);
+        }
+        showToast('Billing period cleared', 'ok');
+      } catch (e) {
+        console.error(e);
+        showToast('Reset failed', 'bad');
+      } finally {
+        resetPeriodBtn.disabled = false;
+        resetPeriodBtn.innerHTML = orig;
+      }
+    });
+  }
+
   document.addEventListener('keydown', async e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
       e.preventDefault();
