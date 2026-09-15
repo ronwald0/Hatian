@@ -1353,6 +1353,126 @@
     .mini-period-card{padding:12px;border-radius:14px}
     .mini-save-row{grid-template-columns:1fr 1fr}
   }
+
+  /* ═══════════════════════════════════════════════════════════
+     NEW: MINI-APP TOP ACTIONS + INTERACTIVE FEEDBACK
+     ═══════════════════════════════════════════════════════════ */
+  .mini-actions-top {
+    margin-top: 0;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--border);
+    animation: miniActionsIn .35s ease;
+  }
+  @keyframes miniActionsIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .mini-btn .btn-ico {
+    font-size: 13px;
+    line-height: 1;
+    display: inline-block;
+  }
+  .mini-btn .btn-txt {
+    display: inline-block;
+    line-height: 1;
+  }
+  /* Saved success state — green + check */
+  .mini-btn.saved {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: 0 6px 18px -8px rgba(5,150,105,.9), 0 0 0 3px rgba(16,185,129,.18) !important;
+    transform: scale(1.02);
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+    opacity: 1 !important;
+    filter: none !important;
+  }
+  .mini-btn.saved .btn-ico {
+    animation: popCheck .45s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popCheck {
+    0%   { transform: scale(0) rotate(-60deg); opacity: 0; }
+    60%  { transform: scale(1.35) rotate(0); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  /* Cleared pulse state — amber */
+  .mini-btn.cleared {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: 0 6px 18px -8px rgba(217,119,6,.9), 0 0 0 3px rgba(245,158,11,.18) !important;
+    transform: scale(.98);
+    transition: all .22s ease;
+  }
+  /* Day cell fade-out on clear */
+  .mini-cal .mc-day.fading {
+    animation: dayFadeOut .38s ease forwards;
+    pointer-events: none;
+  }
+  @keyframes dayFadeOut {
+    0%   { opacity: 1; transform: scale(1); }
+    45%  { opacity: .6; transform: scale(.85); background: rgba(220,38,38,.22); }
+    100% { opacity: 0; transform: scale(.6);  background: rgba(220,38,38,.08); }
+  }
+  /* Reminder toast variant (longer-lived) */
+  .toast.reminder {
+    border-color: rgba(217,119,6,.45);
+    background: linear-gradient(135deg, rgba(251,191,36,.14), #ffffff);
+    font-weight: 650;
+    animation: toastIn .25s ease, toastOut .3s ease 4.6s forwards;
+  }
+  .toast.reminder .dot {
+    background: var(--warn);
+    box-shadow: 0 0 8px rgba(217,119,6,.6);
+  }
+  [data-theme="dark"] .toast.reminder {
+    background: linear-gradient(135deg, rgba(251,191,36,.16), var(--card));
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     NEW: MOBILE-FIT REFINEMENTS FOR MINI-APP
+     (Expenses / Deductions / Days forms)
+     ═══════════════════════════════════════════════════════════ */
+  .mini-item { flex-wrap: nowrap; overflow: hidden; max-width: 100%; }
+  .mini-item-body { min-width: 0; overflow: hidden; flex: 1 1 auto; }
+  .mini-item-title,
+  .mini-item-meta { max-width: 100%; }
+  .mini-item-amount { flex: 0 0 auto; max-width: 55%; overflow: hidden; text-overflow: ellipsis; }
+  .mini-item-del { flex: 0 0 auto; }
+  .mini-form { max-width: 100%; overflow: hidden; }
+  .mini-form input,
+  .mini-form select { max-width: 100%; min-width: 0; }
+  .mini-chips { max-width: 100%; }
+  .mini-chips .chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+  @media(max-width:420px) {
+    .mini-body { padding: 10px; }
+    .mini-item { padding: 10px; gap: 8px; }
+    .mini-item-title { font-size: 13px; }
+    .mini-item-meta { font-size: 10.5px; }
+    .mini-item-amount { font-size: 13px; }
+    .mini-item-del { width: 26px; height: 26px; font-size: 15px; }
+    .mini-form { padding: 12px; gap: 9px; border-radius: 12px; }
+    .mini-form-title { font-size: 12.5px; }
+    .mini-form input,
+    .mini-form select { padding: 11px 12px; font-size: 14.5px; }
+    .mini-chips .chip { padding: 6px 10px; font-size: 11.5px; }
+    .mini-save-row { gap: 7px; }
+    .mini-btn { font-size: 12.5px; padding: 12px 12px; }
+    .mini-period-head { gap: 8px; }
+    .mini-period-title { font-size: 12.5px; }
+    .mini-period-count strong { font-size: 14px; }
+  }
+  @media(max-width:360px) {
+    /* Stack very long items so amount + delete still fit */
+    .mini-item { flex-wrap: wrap; row-gap: 6px; }
+    .mini-item-body { flex: 1 1 100%; }
+    .mini-item-amount { margin-left: 0; flex: 0 0 auto; font-size: 13.5px; max-width: 100%; }
+    .mini-item-del { margin-left: auto; }
+    .mini-save-row { grid-template-columns: 1fr; }
+    .mini-btn .btn-txt { font-size: 12px; }
+  }
 </style>
 </head>
 <body>
@@ -2290,13 +2410,13 @@
   }
 
   const toastWrap = document.getElementById('toastWrap');
-  function showToast(msg, kind) {
+  function showToast(msg, kind, duration) {
     kind = kind || 'ok';
     const el = document.createElement('div');
     el.className = 'toast ' + kind;
     el.innerHTML = '<span class="dot"></span><span>' + escapeHtml(msg) + '</span>';
     toastWrap.appendChild(el);
-    setTimeout(() => el.remove(), 2900);
+    setTimeout(() => el.remove(), duration || 2900);
   }
 
   async function snapshotCard(btn) {
@@ -4673,7 +4793,7 @@
       const startEl = document.getElementById('globalStart');
       const endEl   = document.getElementById('globalEnd');
       const start = startEl ? startEl.value : DEFAULT_START;
-      const end   = endEl   ? endEl.value   : DEFAULT_END;
+      const end   = endEl   ? endEl.value : DEFAULT_END;
       const dates = datesBetweenISO(start, end);
       if (periodLabelEl) {
         periodLabelEl.textContent = dates.length > 0
@@ -5323,7 +5443,7 @@
     }
   }
 
-  function saveMiniDraft() {
+  function saveMiniDraft(btn) {
     const memberName = miniDraftMember;
     if (!memberName) { showToast('No member signed in', 'warn'); return; }
     const current = memberDatesStore.get(memberName);
@@ -5333,6 +5453,21 @@
     // Apply draft selections that fall INSIDE the shown periods
     miniDraftSet.forEach(d => { if (miniIsDateInShownPeriods(d)) newSet.add(d); });
     memberDatesStore.set(memberName, newSet);
+
+    // Success animation — green + checkmark
+    if (btn) {
+      const originalHTML = btn.innerHTML;
+      btn.classList.remove('cleared');
+      btn.classList.add('saved');
+      btn.innerHTML = '<span class="btn-ico">✓</span><span class="btn-txt">Saved</span>';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.classList.remove('saved');
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+      }, 1700);
+    }
+
     if (window.HatianCloud && typeof window.HatianCloud.push === 'function') {
       window.HatianCloud.push(true);
     } else {
@@ -5340,17 +5475,38 @@
     }
   }
 
-  function clearMiniDraft() {
+  function clearMiniDraft(btn) {
     if (!miniDraftMember) return;
     const toRemove = [];
     miniDraftSet.forEach(d => { if (miniIsDateInShownPeriods(d)) toRemove.push(d); });
-    toRemove.forEach(d => miniDraftSet.delete(d));
-    renderMiniDays();
-    if (toRemove.length > 0) {
-      showToast('Cleared ' + toRemove.length + ' day' + (toRemove.length === 1 ? '' : 's') + ' — tap Save to confirm', 'ok');
-    } else {
+    if (toRemove.length === 0) {
       showToast('Nothing to clear in the visible periods', 'warn');
+      return;
     }
+    const panel = document.getElementById('miniPanelDays');
+
+    // Briefly mark the button as "cleared" (amber)
+    if (btn) {
+      btn.classList.add('cleared');
+      setTimeout(() => { btn.classList.remove('cleared'); }, 700);
+    }
+
+    // Fade out selected dates smoothly
+    toRemove.forEach(iso => {
+      const el = panel && panel.querySelector('.mc-day[data-iso="' + iso + '"]');
+      if (el) el.classList.add('fading');
+    });
+
+    // After the fade finishes, remove them from the draft + re-render
+    setTimeout(() => {
+      toRemove.forEach(d => miniDraftSet.delete(d));
+      renderMiniDays();
+    }, 380);
+
+    // Reminder toast (longer-lived) after the animation
+    setTimeout(() => {
+      showToast('Cleared — tap Save to cloud to save changes', 'reminder', 4900);
+    }, 420);
   }
 
   /* Mini-app drag select state (works on miniDraftSet, unsaved until Save) */
@@ -5415,6 +5571,34 @@
   document.addEventListener('touchend', () => { miniCalDrag.active = false; });
   document.addEventListener('touchcancel', () => { miniCalDrag.active = false; });
 
+  /* NEW: builds the Save/Clear action cluster that sits at the top of the first period */
+  function createMiniActions() {
+    const wrap = document.createElement('div');
+    wrap.className = 'mini-actions mini-actions-top';
+
+    const saveRow = document.createElement('div');
+    saveRow.className = 'mini-save-row';
+
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'mini-btn clear';
+    clearBtn.id = 'miniClearBtn';
+    clearBtn.innerHTML = '<span class="btn-ico">🗑</span><span class="btn-txt">Clear</span>';
+    clearBtn.addEventListener('click', () => clearMiniDraft(clearBtn));
+    saveRow.appendChild(clearBtn);
+
+    const saveBtnEl = document.createElement('button');
+    saveBtnEl.type = 'button';
+    saveBtnEl.className = 'mini-btn primary save';
+    saveBtnEl.id = 'miniSaveBtn';
+    saveBtnEl.innerHTML = '<span class="btn-ico">☁</span><span class="btn-txt">Save to cloud</span>';
+    saveBtnEl.addEventListener('click', () => saveMiniDraft(saveBtnEl));
+    saveRow.appendChild(saveBtnEl);
+
+    wrap.appendChild(saveRow);
+    return wrap;
+  }
+
   function renderMiniDays() {
     const panel = document.getElementById('miniPanelDays');
     if (!panel) return;
@@ -5448,6 +5632,11 @@
         '</div>';
       card.appendChild(head);
 
+      // NEW: Save + Clear buttons at the top of the first period only
+      if (period.idx === 0) {
+        card.appendChild(createMiniActions());
+      }
+
       const cal = document.createElement('div');
       cal.className = 'mini-cal';
       cal.dataset.calFor = period.start;
@@ -5473,7 +5662,7 @@
       panel.appendChild(card);
     });
 
-    // Action cluster: Load more + Clear / Save
+    // Load more stays at the bottom of the list
     const actions = document.createElement('div');
     actions.className = 'mini-actions';
 
@@ -5488,26 +5677,6 @@
     });
     actions.appendChild(loadMoreBtn);
 
-    const saveRow = document.createElement('div');
-    saveRow.className = 'mini-save-row';
-
-    const clearBtn = document.createElement('button');
-    clearBtn.type = 'button';
-    clearBtn.className = 'mini-btn clear';
-    clearBtn.id = 'miniClearBtn';
-    clearBtn.innerHTML = '🗑 Clear';
-    clearBtn.addEventListener('click', clearMiniDraft);
-    saveRow.appendChild(clearBtn);
-
-    const saveBtnEl = document.createElement('button');
-    saveBtnEl.type = 'button';
-    saveBtnEl.className = 'mini-btn primary save';
-    saveBtnEl.id = 'miniSaveBtn';
-    saveBtnEl.innerHTML = '☁ Save to cloud';
-    saveBtnEl.addEventListener('click', saveMiniDraft);
-    saveRow.appendChild(saveBtnEl);
-
-    actions.appendChild(saveRow);
     panel.appendChild(actions);
 
     attachMiniCalHandlers(panel);
