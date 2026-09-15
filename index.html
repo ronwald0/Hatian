@@ -1180,6 +1180,117 @@
   .room-ac-config .rc-kwh {
       display: none !important;
   }
+
+  /* =========================================================
+     NEW FIXES (2024 refresh)
+     ========================================================= */
+
+  /* Fix: selected dates in the day-calendar picker were invisible
+     on dark theme because the generic dark `.dc-day` rule
+     (equal specificity, later in the cascade) was overriding
+     the `.dc-day.selected` style. Force it with !important. */
+  [data-theme="dark"] .day-cal .dc-day.selected,
+  [data-theme="dark"] .day-cal .dc-day.selected:hover {
+    background: linear-gradient(135deg, #0ea5e9, #0891b2) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px -3px rgba(2,132,199,.75) !important;
+    border-color: transparent !important;
+  }
+
+  /* Fix: dark theme for House Members & Rooms — some inner rows
+     were staying light because their light background declared
+     later or with equal specificity. Force dark equivalents. */
+  [data-theme="dark"] .room-card,
+  [data-theme="dark"] .room-card.no-ac {
+    background: var(--card) !important;
+    border-color: rgba(217,119,6,.28) !important;
+  }
+  [data-theme="dark"] .room-card.no-ac {
+    border-color: var(--border) !important;
+  }
+  [data-theme="dark"] .room-header {
+    background: linear-gradient(90deg,rgba(217,119,6,.10),rgba(217,119,6,.03)) !important;
+    border-bottom-color: rgba(217,119,6,.16) !important;
+  }
+  [data-theme="dark"] .room-card.no-ac .room-header {
+    background: var(--tint) !important;
+    border-bottom-color: var(--border) !important;
+  }
+  [data-theme="dark"] .room-body,
+  [data-theme="dark"] .room-card.no-ac .room-body {
+    background: transparent !important;
+  }
+  [data-theme="dark"] .rs-solo-row {
+    background: var(--tint) !important;
+    border-color: var(--border) !important;
+  }
+  [data-theme="dark"] .rs-solo-row select {
+    background: #0e1729 !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+  }
+  [data-theme="dark"] .rs-solo-row .mr-amount { color: var(--text); }
+  [data-theme="dark"] .mr-row {
+    background: var(--tint) !important;
+    border-color: var(--border) !important;
+  }
+  [data-theme="dark"] .mr-row:hover {
+    background: var(--tint-2) !important;
+    border-color: var(--border-strong) !important;
+  }
+  [data-theme="dark"] .rs-chips .chip {
+    background: var(--card);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  [data-theme="dark"] .rs-chips .chip.on {
+    background: rgba(217,119,6,.15);
+    color: #fbbf24;
+    border-color: rgba(217,119,6,.45);
+  }
+  [data-theme="dark"] .rh-name {
+    background: #0e1729 !important;
+    color: var(--ac) !important;
+    border-color: rgba(217,119,6,.35) !important;
+  }
+  [data-theme="dark"] .room-card.no-ac .rh-name {
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+  }
+
+  /* Collapsible Household setup card */
+  .global-card.collapsed #householdSetupBody {
+    display: none;
+  }
+  .setup-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: var(--shadow-sm);
+    transition: all .18s;
+    flex: 0 0 auto;
+  }
+  .setup-toggle-btn:hover {
+    background: var(--tint);
+    border-color: var(--border-strong);
+  }
+  .setup-toggle-btn:active { transform: scale(.95); }
+  [data-theme="dark"] .setup-toggle-btn {
+    background: var(--card);
+    color: var(--text);
+  }
 </style>
 </head>
 <body>
@@ -1309,7 +1420,7 @@
     <button class="tab" data-tab="analytics" id="analyticsTab"><span class="tab-icon">📈</span> Analytics</button>
   </div>
 
-  <section class="card global-card">
+  <section class="card global-card" id="householdSetupCard">
     <div class="card-head">
       <h2>🏠 Household setup</h2>
       <div class="head-actions">
@@ -1317,8 +1428,10 @@
         <button type="button" class="btn-ghost save" id="saveBtn" title="Save this period to the cloud"><span class="ico">☁️</span> Save to cloud</button>
         <button type="button" class="btn-ghost export" id="exportBtn"><span class="ico">📤</span> Export breakdown</button>
         <select class="period-select" id="periodSelect" title="Choose billing period"></select>
+        <button type="button" class="setup-toggle-btn" id="toggleSetupBtn" title="Collapse / expand Household setup" aria-expanded="true"><span id="toggleSetupIcon">▾</span></button>
       </div>
     </div>
+    <div id="householdSetupBody">
     <div class="settings-grid">
       <div class="field">
         <label>Billing period <span class="hint">(every 15th → 14th)</span></label>
@@ -1343,6 +1456,7 @@
       </div>
       <div id="globalDaysGrid" class="global-days-grid"></div>
     </div>
+    </div><!-- /#householdSetupBody -->
   </section>
 
   <section class="tab-panel active" data-app="water" id="panel-water" role="tabpanel">
@@ -1413,7 +1527,7 @@
             </div>
             <div class="field">
               <label>Base load (kWh / person / day)</label>
-              <input type="text" data-role="baseKwh" inputmode="decimal" value="3.00" autocomplete="off">
+              <input type="text" data-role="baseKwh" inputmode="decimal" value="4.00" autocomplete="off">
             </div>
             <p class="kwh-note">Base load covers lights, fans, phone charging, etc. AC consumption is computed per room using HP, AC type (inverter / non-inverter), hours per day, and days on. Values are scaled to the actual bill you enter above.</p>
           </div>
@@ -1451,8 +1565,8 @@
               <option value="solo">Sort: Solo rooms first</option>
               <option value="shared">Sort: Shared rooms first</option>
             </select>
-            <button class="btn save-rooms" data-role="saveLayout" type="button" title="Save current room assignments">💾 Save rooms</button>
-            <button class="btn load-rooms" data-role="loadLayout" type="button" title="Restore saved room assignments">📂 Load rooms</button>
+            <button class="btn save-rooms" data-role="saveLayout" type="button" title="Save current room names & assignments">💾 Save rooms</button>
+            <button class="btn load-rooms" data-role="loadLayout" type="button" title="Restore saved room names & assignments">📂 Load rooms</button>
             <button class="btn reset-btn" data-role="resetMembers" type="button" title="Reset all days to 0">↺ Reset</button>
             <button class="btn" data-role="evenSplit" type="button">Even split</button>
             <button class="btn" data-role="addPerson" type="button">+ Add member</button>
@@ -2766,7 +2880,8 @@
     let roomSort = 'default';
     let calcMode = 'simple';
     let kwhRate = 14.7833;
-    let baseKwhPerPersonDay = 3;
+    // Base load changed to 4.00 (was 3.00)
+    let baseKwhPerPersonDay = 4;
     const HP_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0];
     const curSymbol = () => els.currency.value;
     const fmt = v => curSymbol() + NUM_FMT.format(Number.isFinite(v) ? v : 0);
@@ -2930,7 +3045,9 @@
             acType: r.acType, acHp: r.acHp, acHours: r.acHours, acDays: r.acDays, acDaysAuto: r.acDaysAuto !== false, acUnits: r.acUnits,
             members: people.filter(p => p.roomId === r.id).map(p => (p.name || '').trim()).filter(Boolean) })) };
         localStorage.setItem(ROOM_LAYOUT_KEY, JSON.stringify(layout));
-        showToast('Room assignments saved', 'ok');
+        // Persist to the household snapshot so names survive reloads/sync.
+        notifyChange();
+        showToast('Room names & assignments saved', 'ok');
       } catch (e) { showToast('Could not save room assignments', 'bad'); }
     }
     function loadRoomLayout() {
@@ -3115,7 +3232,8 @@
       room._totalEl = card.querySelector('.rh-total');
       const nameInput = card.querySelector('.rh-name');
       nameInput.addEventListener('input', function () { room.name = this.value; });
-      nameInput.addEventListener('blur', function () { this.value = room.name || 'Room'; });
+      nameInput.addEventListener('change', function () { room.name = this.value; notifyChange(); });
+      nameInput.addEventListener('blur', function () { this.value = room.name || 'Room'; notifyChange(); });
       card.querySelectorAll('.rh-type button').forEach(btn => {
         btn.addEventListener('click', () => {
           const newType = btn.dataset.type;
@@ -4664,6 +4782,28 @@
   globalRent.value = formatNumInput(0);
   globalCurrency.value = '₱';
   attachNumFormat(globalWater); attachNumFormat(globalMeralco); attachNumFormat(globalRent);
+
+  /* ====== HOUSEHOLD SETUP COLLAPSE ====== */
+  (function initSetupCollapse() {
+    const card = document.getElementById('householdSetupCard');
+    const btn = document.getElementById('toggleSetupBtn');
+    const icon = document.getElementById('toggleSetupIcon');
+    if (!card || !btn) return;
+    let collapsed = false;
+    try { collapsed = localStorage.getItem('hatian-setup-collapsed') === '1'; } catch (e) {}
+    function apply() {
+      card.classList.toggle('collapsed', collapsed);
+      if (icon) icon.textContent = collapsed ? '▸' : '▾';
+      btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      btn.title = collapsed ? 'Expand Household setup' : 'Collapse Household setup';
+    }
+    apply();
+    btn.addEventListener('click', () => {
+      collapsed = !collapsed;
+      apply();
+      try { localStorage.setItem('hatian-setup-collapsed', collapsed ? '1' : '0'); } catch (e) {}
+    });
+  })();
 
   const pushWaterBill = v => waterApp.setBill(parseNum(v));
   const pushMeralcoBill = v => electricApp.setBill(parseNum(v));
