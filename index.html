@@ -513,6 +513,9 @@
   .expense-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:10px;font-size:11.5px;color:var(--muted)}
   .exp-paidby{display:flex;align-items:center;gap:6px;white-space:nowrap;font-weight:550}
   .exp-paidby-sel{width:auto;padding:6px 26px 6px 9px;font-size:12.5px;font-weight:600;border-radius:9px}
+  .exp-date-label{display:flex;align-items:center;gap:6px;white-space:nowrap;font-weight:550}
+  .exp-date{width:auto;padding:4px 8px;font-size:12px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text);}
+  [data-theme="dark"] .exp-date{background:#0e1729;color:var(--text)}
   .exp-participants{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap}
   .exp-label{font-size:11px;color:var(--muted);padding-top:5px;white-space:nowrap;font-weight:550}
   .chips{display:flex;flex-wrap:wrap;gap:5px;flex:1;min-width:0}
@@ -1163,6 +1166,20 @@
      takes the freed space on desktop. */
   .mr-row      { grid-template-columns: 34px minmax(0,1fr) auto 110px 22px; }
   .rs-solo-row { grid-template-columns: minmax(0,1fr) auto 110px; }
+
+  /* =========================================================
+     Fix Dark Theme for Room Cards & Hide Estimation Label
+     ========================================================= */
+  [data-theme="dark"] .room-card,
+  [data-theme="dark"] .room-card.no-ac {
+      background: var(--card) !important;
+  }
+  [data-theme="dark"] .room-card {
+      border-color: rgba(217,119,6,.28);
+  }
+  .room-ac-config .rc-kwh {
+      display: none !important;
+  }
 </style>
 </head>
 <body>
@@ -1396,7 +1413,7 @@
             </div>
             <div class="field">
               <label>Base load (kWh / person / day)</label>
-              <input type="text" data-role="baseKwh" inputmode="decimal" value="2.00" autocomplete="off">
+              <input type="text" data-role="baseKwh" inputmode="decimal" value="3.00" autocomplete="off">
             </div>
             <p class="kwh-note">Base load covers lights, fans, phone charging, etc. AC consumption is computed per room using HP, AC type (inverter / non-inverter), hours per day, and days on. Values are scaled to the actual bill you enter above.</p>
           </div>
@@ -2749,7 +2766,7 @@
     let roomSort = 'default';
     let calcMode = 'simple';
     let kwhRate = 14.7833;
-    let baseKwhPerPersonDay = 2;
+    let baseKwhPerPersonDay = 3;
     const HP_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0];
     const curSymbol = () => els.currency.value;
     const fmt = v => curSymbol() + NUM_FMT.format(Number.isFinite(v) ? v : 0);
@@ -2790,10 +2807,25 @@
         if (group.length === 0) return;
         const totalRoomDays = group.reduce((a,p) => a + p.days, 0);
         const roomKWh = roomEstimatedKWh(room, periodDaysVal);
-        if (totalRoomDays <= 0) {
-          group.forEach(p => { weights[p.id] = (weights[p.id] || 0) + roomKWh / group.length; });
+        
+        if (room.type === 'solo' || group.length === 1) {
+          group.forEach(p => { weights[p.id] = (weights[p.id] || 0) + roomKWh; });
+          return;
+        }
+        
+        if (room.mode === 'apart') {
+          // Apart: split proportional to individual days
+          group.forEach(p => { 
+            weights[p.id] = (weights[p.id] || 0) + roomKWh * (p.days / Math.max(totalRoomDays, 1)); 
+          });
         } else {
-          group.forEach(p => { weights[p.id] = (weights[p.id] || 0) + roomKWh * (p.days / totalRoomDays); });
+          // Together: split proportional to overlap units
+          const daysArr = group.map(p => p.days);
+          const units = computeTogetherUnits(daysArr);
+          const totalUnits = units.reduce((a,b)=>a+b,0) || 1;
+          group.forEach((p,i) => { 
+            weights[p.id] = (weights[p.id] || 0) + roomKWh * (units[i] / totalUnits); 
+          });
         }
       });
       return weights;
@@ -3034,14 +3066,9 @@
       card.className = 'room-card' + (room.hasAC ? '' : ' no-ac');
       card.dataset.roomMembers = group.map(p => (p.name || '').trim()).filter(Boolean).join('||');
 
-      // The × multiplier and Together/Apart are ALWAYS editable when the
-      // room has AC — even in kWh mode — so admins can pre-configure them
-      // before switching modes. In kWh mode they are simply ignored by the
-      // calculator, which we communicate via the title tooltip.
       const hideMult    = !room.hasAC;
       const multDisabled = !room.hasAC;
 
-      // Together/Apart only makes sense for shared rooms that have AC.
       const hideMode    = !room.hasAC || room.type === 'solo';
       const modeDisabled = !room.hasAC || room.type === 'solo' || group.length < 2;
 
@@ -3052,7 +3079,6 @@
         ? 'Together/Apart (used in "Weighted days" mode; kWh mode splits by estimated consumption)'
         : 'Together shares AC cost by actual overlap · Apart charges each their own days';
 
-      // Build the × selector options, snapping to the closest preset.
       const curMult = clampMult(room.acMult);
       const multOptsHtml = AC_MULT_OPTIONS.map(v =>
         '<option value="' + v + '"' + (Math.abs(curMult - v) < 0.01 ? ' selected' : '') + '>' + v + '</option>'
@@ -3778,7 +3804,7 @@
       members.forEach((m,i) => m.color = COLORS[i%COLORS.length]); }
     function addExpense() {
       const id = ++expenseIdCounter;
-      const e = { id, description:'', amount:0, paidBy: members[0]?members[0].id:null, participants: new Set(members.map(m => m.id)) };
+      const e = { id, description:'', amount:0, date: els.start.value || toISO(new Date()), paidBy: members[0]?members[0].id:null, participants: new Set(members.map(m => m.id)) };
       expenses.push(e); return e;
     }
     function createExpenseNode(e) {
@@ -3790,15 +3816,20 @@
           <input class="exp-amt" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00">
           <button class="remove exp-remove" type="button">×</button>
         </div>
-        <div class="expense-meta"><label class="exp-paidby">Paid by <select class="exp-paidby-sel"></select></label></div>
+        <div class="expense-meta">
+          <label class="exp-paidby">Paid by <select class="exp-paidby-sel"></select></label>
+          <label class="exp-date-label">Date <input type="date" class="exp-date"></label>
+        </div>
         <div class="exp-participants"><span class="exp-label">Split among:</span><div class="chips"></div></div>
       `;
       const descInput = node.querySelector('.exp-desc');
       const amtInput = node.querySelector('.exp-amt');
       const paidBySel = node.querySelector('.exp-paidby-sel');
+      const dateInput = node.querySelector('.exp-date');
       const chipsBox = node.querySelector('.chips');
       descInput.value = e.description;
       amtInput.value = e.amount ? formatNumInput(e.amount) : '';
+      dateInput.value = e.date || '';
       attachNumFormat(amtInput);
       members.forEach(m => { const opt = document.createElement('option'); opt.value = m.id; opt.textContent = m.name || 'Unnamed'; if (m.id === e.paidBy) opt.selected = true; paidBySel.appendChild(opt); });
       const chipMap = new Map();
@@ -3818,6 +3849,7 @@
       amtInput.addEventListener('input', () => { const v = parseNum(amtInput.value); e.amount = v > 0 ? v : 0; renderTotals(); });
       amtInput.addEventListener('blur', () => { amtInput.value = e.amount ? formatNumInput(e.amount) : ''; });
       paidBySel.addEventListener('change', () => { e.paidBy = Number(paidBySel.value); renderTotals(); });
+      dateInput.addEventListener('input', () => { e.date = dateInput.value; renderTotals(); });
       node.querySelector('.exp-remove').addEventListener('click', () => { expenses = expenses.filter(x => x.id !== e.id); node.remove(); renderTotals(); });
       e._node = node; e._paidBySel = paidBySel; e._chips = chipMap;
       return node;
@@ -3913,7 +3945,7 @@
         if (!payer) return;
         const name = (payer.name||'').trim();
         if (!name) return;
-        entries.push({ name, description: e.description || '(no description)', amount: e.amount, date: els.start.value || '' });
+        entries.push({ name, description: e.description || '(no description)', amount: e.amount, date: e.date || els.start.value || '' });
       });
       othersBridge.setEntries(entries);
     }
@@ -3985,7 +4017,7 @@
         expenses: expenses.map(e => {
           const payer = members.find(m => m.id === e.paidBy);
           const participants = Array.from(e.participants).map(id => { const m = members.find(x => x.id === id); return m ? (m.name||'').trim() : ''; }).filter(Boolean);
-          return { description: e.description||'(no description)', amount: e.amount||0, paidBy: payer?(payer.name||'').trim():'—', participants };
+          return { description: e.description||'(no description)', amount: e.amount||0, date: e.date||'', paidBy: payer?(payer.name||'').trim():'—', participants };
         }),
         members: members.map(m => ({ name: (m.name||'').trim()||'Unnamed', share: r.shares.get(m.id)||0, paid: r.paid.get(m.id)||0 })) };
     }
@@ -3995,7 +4027,7 @@
         expenses: expenses.map(e => {
           const payer = members.find(m => m.id === e.paidBy);
           const participants = Array.from(e.participants).map(id => { const m = members.find(x => x.id === id); return m ? (m.name||'').trim() : ''; }).filter(Boolean);
-          return { description: e.description, amount: e.amount, paidBy: payer?(payer.name||'').trim():'', participants };
+          return { description: e.description, amount: e.amount, date: e.date||'', paidBy: payer?(payer.name||'').trim():'', participants };
         }) };
     }
     function setState(s) {
@@ -4010,7 +4042,7 @@
         const payer = members.find(m => (m.name||'').trim() === ee.paidBy);
         const participantIds = new Set();
         (ee.participants||[]).forEach(n => { const m = members.find(x => (x.name||'').trim() === n); if (m) participantIds.add(m.id); });
-        expenses.push({ id, description: ee.description||'', amount: ee.amount||0, paidBy: payer ? payer.id : (members[0]?members[0].id:null), participants: participantIds });
+        expenses.push({ id, description: ee.description||'', amount: ee.amount||0, date: ee.date||'', paidBy: payer ? payer.id : (members[0]?members[0].id:null), participants: participantIds });
       });
       renderExpenses(); buildMembers(); renderTotals();
     }
@@ -4521,13 +4553,10 @@
   }
 
   function copyText(btn, text) {
-    // "Copy breakdown" buttons now take a screenshot of the surrounding
-    // summary card (excluding the button itself) instead of copying text.
     if (btn && btn.dataset && btn.dataset.role === 'copySummary') {
       snapshotCard(btn);
       return;
     }
-    // Legacy text-copy path (kept as a fallback for any other callers).
     const done = () => { const o = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => btn.textContent = o, 1600); };
     const fallback = () => { const ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy'); done();}catch(e){} document.body.removeChild(ta); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(fallback);
@@ -4767,8 +4796,6 @@
       globalStart.value = parts[0];
       globalEnd.value   = parts[1];
 
-      // Blank the period immediately (rent → 0.00). Cloud pull below
-      // will only overwrite this if the period actually has a saved row.
       if (window.Hatian && typeof window.Hatian.resetPeriodState === 'function') {
         window.Hatian.resetPeriodState();
       }
@@ -4822,7 +4849,6 @@
       e.preventDefault();
       if (!memberAvatars.get(name)) return;
       if (window.confirm('Remove the photo for ' + name + '?')) {
-        // Try cloud delete too
         const cloud = window.HatianAvatarCloud;
         if (cloud && typeof cloud.remove === 'function') {
           cloud.remove(name).then(() => {}).catch(() => {});
@@ -5112,7 +5138,6 @@
 
   function resetPeriodState() {
     const prevElectric = electricApp.getState();
-    // New billing period -> rent always starts blank (no static 14,000.00 carry-over)
     const rentValue = 0;
     const currency = globalCurrency.value;
     const members = globalMemberNames.slice();
@@ -5122,7 +5147,7 @@
       savedAt: new Date().toISOString(),
       period: { start: globalStart.value, end: globalEnd.value },
       currency: currency,
-      avatars: memberAvatars.toJSON(),   // keep avatars across periods
+      avatars: memberAvatars.toJSON(),
       globalWater: 0,
       globalMeralco: 0,
       globalRent: rentValue,
@@ -5463,8 +5488,6 @@
     exportDownloadBtn.textContent = '… generating';
     try {
       const text = buildExportText();
-      // Render the text into an offscreen monospace container so we can
-      // capture box-drawing glyphs that standard PDF fonts don't support.
       const wrap = document.createElement('div');
       wrap.style.cssText =
         'position:absolute;top:0;left:-99999px;background:#ffffff;color:#000000;' +
@@ -5697,7 +5720,6 @@
     try { await sb.rpc('set_member_avatar_url', { p_member_id: rowId, p_url: null }); } catch (e) {}
   }
   window.HatianAvatarCloud = { upload: uploadAvatarToCloud, remove: removeAvatarFromCloud };
-  // Let the main app know that cloud is available for avatar uploads
   window.HatianAvatarCloudAvailable = true;
 
   function loadRemembered() {
@@ -5960,7 +5982,6 @@
       if (error) throw error;
       members = data || [];
       renderMembers();
-      // Sync avatar URLs from DB into the local avatar store
       if (window.HatianAvatars) {
         const cloudMap = {};
         members.forEach(m => {
@@ -6052,7 +6073,6 @@
       const unclaimedBadge = unclaimed ? '<span class="am-badge unclaimed">Not yet signed in</span>' : '';
       const codeBadge = m.login_code ? '<span class="am-code-badge' + (unclaimed ? ' pending-code' : '') + '" title="Login code">' + esc(m.login_code) + '</span>' : '';
 
-      // Use avatar URL from row (cloud) or fall back to local cache
       const localUrl = (window.HatianAvatars && window.HatianAvatars.get(m.member_name)) || null;
       const avUrl = m.avatar_url || localUrl;
       const avStyle = avUrl
@@ -6423,10 +6443,25 @@
         const units = Number(room.acUnits) || 1;
         const roomKWh = kw * hours * acDays * units;
         const totalRoomDays = group.reduce((a,p) => a + (Number(p.days)||0), 0);
-        if (totalRoomDays <= 0) {
-          group.forEach(p => { weights[p._idx] = (weights[p._idx]||0) + roomKWh / group.length; });
+        
+        if (room.type === 'solo' || group.length === 1) {
+          group.forEach(p => { weights[p._idx] = (weights[p._idx]||0) + roomKWh; });
+          return;
+        }
+        
+        if (room.mode === 'apart') {
+          // Apart: split proportional to individual days
+          group.forEach(p => { 
+            weights[p._idx] = (weights[p._idx]||0) + roomKWh * ((Number(p.days)||0) / Math.max(totalRoomDays, 1)); 
+          });
         } else {
-          group.forEach(p => { weights[p._idx] = (weights[p._idx]||0) + roomKWh * ((Number(p.days)||0) / totalRoomDays); });
+          // Together: split proportional to overlap units
+          const daysArr = group.map(p => Number(p.days)||0);
+          const units = togetherUnits(daysArr);
+          const totalUnits = units.reduce((a,b)=>a+b,0) || 1;
+          group.forEach((p,i) => { 
+            weights[p._idx] = (weights[p._idx]||0) + roomKWh * (units[i] / totalUnits); 
+          });
         }
       });
     } else {
@@ -6759,7 +6794,6 @@
                   if (hh) household = Object.assign({}, hh, { role: slot.role, member_name: slot.member_name });
                   pullPeriod().then(() => {
                     showApp(); updateUserBtn();
-                    // For member sign-in, also sync avatars
                     if (household && household.id) {
                       sb.rpc('get_household_members', { hid: household.id }).then(({ data: mm }) => {
                         if (Array.isArray(mm) && window.HatianAvatars) {
