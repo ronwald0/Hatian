@@ -1316,6 +1316,20 @@
   .mini-empty{padding:24px 16px;text-align:center;color:var(--muted);font-size:12.5px;border:1px dashed var(--border);border-radius:12px;background:var(--tint);line-height:1.5}
   .mini-chips{display:flex;flex-wrap:wrap;gap:6px}
   .mini-chips .chip{padding:7px 12px;font-size:12px}
+  /* NEW: mini-app Save/Clear/Load-more action cluster */
+  .mini-actions{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+  .mini-actions .mini-btn{margin-top:0}
+  .mini-save-row{display:grid;grid-template-columns:1fr 1.8fr;gap:8px}
+  .mini-btn.clear{border-style:solid;border-color:rgba(220,38,38,.42);color:#b91c1c;background:rgba(248,113,113,.06)}
+  .mini-btn.clear:hover{background:rgba(248,113,113,.14);border-color:rgba(220,38,38,.6)}
+  .mini-btn.save{font-weight:750}
+  .mini-btn.load-more{border-style:dashed;border-color:rgba(124,58,237,.42);color:#6d28d9;background:rgba(124,58,237,.05)}
+  .mini-btn.load-more:hover{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.6)}
+  .mini-btn:disabled{opacity:.55;cursor:not-allowed;filter:grayscale(.4)}
+  [data-theme="dark"] .mini-btn.clear{border-color:rgba(220,38,38,.55);color:#fca5a5;background:rgba(248,113,113,.10)}
+  [data-theme="dark"] .mini-btn.clear:hover{background:rgba(248,113,113,.20)}
+  [data-theme="dark"] .mini-btn.load-more{border-color:rgba(167,139,250,.55);color:#c4b5fd;background:rgba(124,58,237,.10)}
+  [data-theme="dark"] .mini-btn.load-more:hover{background:rgba(124,58,237,.20)}
   [data-theme="dark"] .mini-tabs{background:var(--card);border-color:var(--border)}
   [data-theme="dark"] .mini-tab.active{color:#7dd3fc}
   [data-theme="dark"] .mini-period-badge{background:rgba(2,132,199,.20);color:#7dd3fc;border-color:rgba(2,132,199,.35)}
@@ -1337,6 +1351,7 @@
     .mini-icon-btn{width:34px;height:34px;font-size:14px}
     .mini-body{padding:12px}
     .mini-period-card{padding:12px;border-radius:14px}
+    .mini-save-row{grid-template-columns:1fr 1fr}
   }
 </style>
 </head>
@@ -5254,104 +5269,151 @@
   })();
 
   /* ═══════════════════════════════════════════════════════════
-     HATIAN DAILY — Mini App logic
+     HATIAN DAILY — Mini App logic  (REWORKED)
      ═══════════════════════════════════════════════════════════ */
   const miniAppEl = document.getElementById('miniApp');
   const appChooserEl = document.getElementById('appChooserModal');
   let currentViewMode = null;
+
+  /* Mini app: fixed billing periods starting Aug 15, 2026 */
+  const MINI_FIRST_PERIOD_START = '2026-08-15';
+  const MINI_INITIAL_PERIODS = 3;   // shows: Aug 15 → Sep 14, Sep 15 → Oct 14, Oct 15 → Nov 14
+  const MINI_PERIODS_PER_LOAD = 2;  // "Load more" adds 2 more
+
+  let miniPeriodCount = MINI_INITIAL_PERIODS;
+  let miniShownPeriods = [];
+  let miniDraftSet = new Set();      // working set (unsaved) for the current member
+  let miniDraftMember = null;
 
   function getMiniMemberName() {
     const perms = window.HatianPermissions || { memberName: '' };
     return (perms.memberName || '').trim();
   }
 
-  function miniPeriods() {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = today.getMonth();
-    const baseMonth = today.getDate() >= 15 ? m : m - 1;
+  function buildMiniPeriods(count) {
     const periods = [];
-    for (let i = 0; i < 3; i++) {
-      const s = new Date(y, baseMonth + i, 15);
+    const baseStart = new Date(MINI_FIRST_PERIOD_START + 'T00:00:00');
+    for (let i = 0; i < count; i++) {
+      const s = new Date(baseStart.getFullYear(), baseStart.getMonth() + i, 15);
       const e = new Date(s.getFullYear(), s.getMonth() + 1, 14);
+      const yy = String(s.getFullYear()).slice(-2);
+      const mm = String(s.getMonth() + 1).padStart(2, '0');
       periods.push({
         start: toISO(s), end: toISO(e),
-        label: i === 0 ? 'Current' : (i === 1 ? 'Next' : '+2'),
-        idx: i
+        label: i === 0 ? 'Current' : (i === 1 ? 'Next' : '+' + i),
+        idx: i,
+        shortId: yy + '/' + mm
       });
     }
     return periods;
   }
 
-  const miniCal = {
-    active: false, workingSet: null, memberName: '', dragMode: 'select', panel: null,
-    start(panel, memberName) { this.panel = panel; this.memberName = memberName; this.workingSet = null; this.active = false; },
-    getBtn(iso) { return this.panel ? this.panel.querySelector('.mc-day[data-iso="' + iso + '"]') : null; },
-    refreshCounts() {
-      const periods = miniPeriods(); const ws = this.workingSet; if (!ws || !this.panel) return;
-      periods.forEach(p => {
-        const dates = datesBetweenISO(p.start, p.end); let sel = 0;
-        dates.forEach(d => { if (ws.has(d)) sel++; });
-        const el = this.panel.querySelector('[data-count-for="' + p.start + '"]');
-        if (el) el.innerHTML = '<strong>' + sel + '</strong>/' + dates.length;
-      });
-    },
-    beginDrag(iso) {
-      if (!this.workingSet) this.workingSet = new Set(memberDatesStore.get(this.memberName));
-      this.dragMode = this.workingSet.has(iso) ? 'deselect' : 'select';
-      this.active = true;
-      this.apply(iso);
-    },
-    apply(iso) {
-      if (!this.active) return;
-      const btn = this.getBtn(iso); if (!btn) return;
-      const had = this.workingSet.has(iso);
-      if (this.dragMode === 'select' && !had) { this.workingSet.add(iso); btn.classList.add('selected'); }
-      else if (this.dragMode === 'deselect' && had) { this.workingSet.delete(iso); btn.classList.remove('selected'); }
-      this.refreshCounts();
-    },
-    commit() {
-      if (!this.active || !this.workingSet) { this.active = false; return; }
-      const current = memberDatesStore.get(this.memberName);
-      const ws = this.workingSet;
-      let changed = current.size !== ws.size;
-      if (!changed) { for (const d of ws) { if (!current.has(d)) { changed = true; break; } } }
-      this.active = false;
-      this.workingSet = null;
-      if (changed) memberDatesStore.set(this.memberName, ws);
-    },
-    cancel() { this.active = false; this.workingSet = null; }
-  };
-  document.addEventListener('mouseup', () => miniCal.commit());
-  document.addEventListener('touchend', () => miniCal.commit());
-  document.addEventListener('touchcancel', () => miniCal.cancel());
+  function miniIsDateInShownPeriods(iso) {
+    for (let i = 0; i < miniShownPeriods.length; i++) {
+      const p = miniShownPeriods[i];
+      if (iso >= p.start && iso <= p.end) return true;
+    }
+    return false;
+  }
 
-  function attachMiniCalHandlers(panel, memberName) {
-    miniCal.start(panel, memberName);
+  function ensureMiniDraft(memberName) {
+    if (miniDraftMember !== memberName) {
+      miniDraftSet = new Set(memberDatesStore.get(memberName));
+      miniDraftMember = memberName;
+    }
+  }
+
+  function saveMiniDraft() {
+    const memberName = miniDraftMember;
+    if (!memberName) { showToast('No member signed in', 'warn'); return; }
+    const current = memberDatesStore.get(memberName);
+    const newSet = new Set();
+    // Keep dates that fall OUTSIDE the currently shown periods
+    current.forEach(d => { if (!miniIsDateInShownPeriods(d)) newSet.add(d); });
+    // Apply draft selections that fall INSIDE the shown periods
+    miniDraftSet.forEach(d => { if (miniIsDateInShownPeriods(d)) newSet.add(d); });
+    memberDatesStore.set(memberName, newSet);
+    if (window.HatianCloud && typeof window.HatianCloud.push === 'function') {
+      window.HatianCloud.push(true);
+    } else {
+      showToast('Saved locally — sign in to sync to cloud', 'warn');
+    }
+  }
+
+  function clearMiniDraft() {
+    if (!miniDraftMember) return;
+    const toRemove = [];
+    miniDraftSet.forEach(d => { if (miniIsDateInShownPeriods(d)) toRemove.push(d); });
+    toRemove.forEach(d => miniDraftSet.delete(d));
+    renderMiniDays();
+    if (toRemove.length > 0) {
+      showToast('Cleared ' + toRemove.length + ' day' + (toRemove.length === 1 ? '' : 's') + ' — tap Save to confirm', 'ok');
+    } else {
+      showToast('Nothing to clear in the visible periods', 'warn');
+    }
+  }
+
+  /* Mini-app drag select state (works on miniDraftSet, unsaved until Save) */
+  const miniCalDrag = { active: false, dragMode: 'select', panel: null };
+
+  function miniCalApply(iso) {
+    if (!miniCalDrag.active || !miniCalDrag.panel) return;
+    const btn = miniCalDrag.panel.querySelector('.mc-day[data-iso="' + iso + '"]');
+    if (!btn) return;
+    if (miniCalDrag.dragMode === 'select') {
+      if (!miniDraftSet.has(iso)) { miniDraftSet.add(iso); btn.classList.add('selected'); }
+    } else {
+      if (miniDraftSet.has(iso)) { miniDraftSet.delete(iso); btn.classList.remove('selected'); }
+    }
+    miniCalUpdateCounts();
+  }
+
+  function miniCalUpdateCounts() {
+    if (!miniCalDrag.panel) return;
+    miniShownPeriods.forEach(period => {
+      const dates = datesBetweenISO(period.start, period.end);
+      let sel = 0;
+      for (let i = 0; i < dates.length; i++) { if (miniDraftSet.has(dates[i])) sel++; }
+      const el = miniCalDrag.panel.querySelector('[data-count-for="' + period.start + '"]');
+      if (el) el.innerHTML = '<strong>' + sel + '</strong> ' + (sel === 1 ? 'day' : 'days') + '/' + dates.length;
+    });
+  }
+
+  function miniCalBeginDrag(iso) {
+    if (!miniCalDrag.panel) return;
+    const btn = miniCalDrag.panel.querySelector('.mc-day[data-iso="' + iso + '"]');
+    if (!btn) return;
+    miniCalDrag.dragMode = miniDraftSet.has(iso) ? 'deselect' : 'select';
+    miniCalDrag.active = true;
+    miniCalApply(iso);
+  }
+
+  function attachMiniCalHandlers(panel) {
+    miniCalDrag.panel = panel;
+    miniCalDrag.active = false;
     panel.querySelectorAll('.mc-day[data-iso]').forEach(btn => {
-      btn.addEventListener('mousedown', e => {
-        if (miniCal.active) return;
-        e.preventDefault();
-        miniCal.beginDrag(btn.dataset.iso);
-      });
-      btn.addEventListener('mouseenter', () => { if (miniCal.active) miniCal.apply(btn.dataset.iso); });
+      btn.addEventListener('mousedown', e => { e.preventDefault(); miniCalBeginDrag(btn.dataset.iso); });
+      btn.addEventListener('mouseenter', () => { if (miniCalDrag.active) miniCalApply(btn.dataset.iso); });
       btn.addEventListener('touchstart', e => {
-        if (miniCal.active) return;
         const t = e.touches[0]; if (!t) return;
         const el = document.elementFromPoint(t.clientX, t.clientY);
-        if (el === btn) { e.preventDefault(); miniCal.beginDrag(btn.dataset.iso); }
+        if (el === btn) { e.preventDefault(); miniCalBeginDrag(btn.dataset.iso); }
       }, { passive: false });
     });
     panel.addEventListener('touchmove', e => {
-      if (!miniCal.active) return;
+      if (!miniCalDrag.active) return;
       const t = e.touches[0]; if (!t) return;
       const el = document.elementFromPoint(t.clientX, t.clientY);
       if (el && el.classList && el.classList.contains('mc-day') && el.dataset.iso) {
         e.preventDefault();
-        miniCal.apply(el.dataset.iso);
+        miniCalApply(el.dataset.iso);
       }
     }, { passive: false });
   }
+
+  document.addEventListener('mouseup', () => { miniCalDrag.active = false; });
+  document.addEventListener('touchend', () => { miniCalDrag.active = false; });
+  document.addEventListener('touchcancel', () => { miniCalDrag.active = false; });
 
   function renderMiniDays() {
     const panel = document.getElementById('miniPanelDays');
@@ -5361,24 +5423,31 @@
       panel.innerHTML = '<div class="mini-empty">No member profile linked to your account. Please sign in with a member code.</div>';
       return;
     }
-    const periods = miniPeriods();
-    const allDates = memberDatesStore.get(memberName);
+    ensureMiniDraft(memberName);
+    miniShownPeriods = buildMiniPeriods(miniPeriodCount);
+
     const todayISO = toISO(new Date());
     panel.innerHTML = '';
-    periods.forEach(period => {
+
+    miniShownPeriods.forEach(period => {
       const dates = datesBetweenISO(period.start, period.end);
-      const selectedCount = dates.filter(d => allDates.has(d)).length;
+      let selectedCount = 0;
+      for (let i = 0; i < dates.length; i++) { if (miniDraftSet.has(dates[i])) selectedCount++; }
       const card = document.createElement('div');
       card.className = 'mini-period-card';
+
       const head = document.createElement('div');
       head.className = 'mini-period-head';
       head.innerHTML =
         '<div><div class="mini-period-title">' + prettyDate(period.start) + ' → ' + prettyDate(period.end) + '</div></div>' +
         '<div style="display:flex;align-items:center;gap:8px">' +
           '<span class="mini-period-badge ' + (period.idx === 0 ? 'current' : '') + '">' + period.label + '</span>' +
-          '<span class="mini-period-count" data-count-for="' + period.start + '"><strong>' + selectedCount + '</strong>/' + dates.length + '</span>' +
+          '<span class="mini-period-count" data-count-for="' + period.start + '">' +
+            '<strong>' + selectedCount + '</strong> ' + (selectedCount === 1 ? 'day' : 'days') + '/' + dates.length +
+          '</span>' +
         '</div>';
       card.appendChild(head);
+
       const cal = document.createElement('div');
       cal.className = 'mini-cal';
       cal.dataset.calFor = period.start;
@@ -5395,7 +5464,7 @@
         const d = new Date(iso + 'T00:00:00');
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'mc-day' + (allDates.has(iso) ? ' selected' : '') + (iso === todayISO ? ' today' : '');
+        btn.className = 'mc-day' + (miniDraftSet.has(iso) ? ' selected' : '') + (iso === todayISO ? ' today' : '');
         btn.dataset.iso = iso;
         btn.textContent = d.getDate();
         cal.appendChild(btn);
@@ -5403,7 +5472,45 @@
       card.appendChild(cal);
       panel.appendChild(card);
     });
-    attachMiniCalHandlers(panel, memberName);
+
+    // Action cluster: Load more + Clear / Save
+    const actions = document.createElement('div');
+    actions.className = 'mini-actions';
+
+    const loadMoreBtn = document.createElement('button');
+    loadMoreBtn.type = 'button';
+    loadMoreBtn.className = 'mini-btn load-more';
+    loadMoreBtn.id = 'miniLoadMoreBtn';
+    loadMoreBtn.innerHTML = '⬇ Load ' + MINI_PERIODS_PER_LOAD + ' more billing periods';
+    loadMoreBtn.addEventListener('click', () => {
+      miniPeriodCount += MINI_PERIODS_PER_LOAD;
+      renderMiniDays();
+    });
+    actions.appendChild(loadMoreBtn);
+
+    const saveRow = document.createElement('div');
+    saveRow.className = 'mini-save-row';
+
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'mini-btn clear';
+    clearBtn.id = 'miniClearBtn';
+    clearBtn.innerHTML = '🗑 Clear';
+    clearBtn.addEventListener('click', clearMiniDraft);
+    saveRow.appendChild(clearBtn);
+
+    const saveBtnEl = document.createElement('button');
+    saveBtnEl.type = 'button';
+    saveBtnEl.className = 'mini-btn primary save';
+    saveBtnEl.id = 'miniSaveBtn';
+    saveBtnEl.innerHTML = '☁ Save to cloud';
+    saveBtnEl.addEventListener('click', saveMiniDraft);
+    saveRow.appendChild(saveBtnEl);
+
+    actions.appendChild(saveRow);
+    panel.appendChild(actions);
+
+    attachMiniCalHandlers(panel);
   }
 
   function renderMiniExpenses() {
