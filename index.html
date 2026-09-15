@@ -423,11 +423,16 @@
   .rh-mult-field.on{background:rgba(217,119,6,.10);border-color:rgba(217,119,6,.38)}
   .rh-mult-label{font-size:11px;font-weight:700;color:var(--muted);line-height:1}
   .rh-mult-field.on .rh-mult-label{color:var(--ac)}
-  .rh-mult-field input{width:38px;padding:3px 4px;font-size:12.5px;font-weight:700;text-align:center;background:transparent;border:none;color:var(--muted);font-variant-numeric:tabular-nums;border-radius:5px;outline:none;font-family:inherit;box-shadow:none}
-  .rh-mult-field.on input{color:var(--ac)}
-  .rh-mult-field input:focus{background:rgba(217,119,6,.14);box-shadow:none}
+  .rh-mult-field input,
+  .rh-mult-field select{width:auto;min-width:44px;padding:3px 6px;font-size:12.5px;font-weight:700;text-align:center;text-align-last:center;background:transparent;border:none;color:var(--muted);font-variant-numeric:tabular-nums;border-radius:5px;outline:none;font-family:inherit;box-shadow:none;-webkit-appearance:none;appearance:none;cursor:pointer}
+  .rh-mult-field.on input,
+  .rh-mult-field.on select{color:var(--ac)}
+  .rh-mult-field input:focus,
+  .rh-mult-field select:focus{background:rgba(217,119,6,.14);box-shadow:none}
+  .rh-mult-field.is-disabled{opacity:.55}
   .rh-mode{width:auto;padding:5px 22px 5px 9px;font-size:11.5px;font-weight:600;border-radius:8px;background:#fff;border:1px solid var(--border);color:var(--text);font-family:inherit;box-shadow:none}
   .rh-mode:focus{border-color:rgba(217,119,6,.5);background:#fff;box-shadow:0 0 0 3px rgba(217,119,6,.10)}
+  .rh-mode:disabled{opacity:.55;cursor:not-allowed}
   .rh-units{font-size:10.5px;font-weight:700;color:var(--ac);padding:4px 9px;background:rgba(217,119,6,.13);border:1px solid rgba(217,119,6,.26);border-radius:6px;letter-spacing:.02em;white-space:nowrap}
   .room-card.no-ac .rh-units{color:var(--muted);background:var(--tint);border-color:var(--border)}
   .rh-total{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--good);padding:4px 9px;background:rgba(5,150,105,.12);border:1px solid rgba(5,150,105,.28);border-radius:8px;letter-spacing:-.01em;white-space:nowrap}
@@ -1060,7 +1065,8 @@
   [data-theme="dark"] .rh-mode{background:#0e1729;color:var(--text)}
   [data-theme="dark"] .rh-ac-toggle{background:#0e1729}
   [data-theme="dark"] .rh-mult-field{background:#0e1729}
-  [data-theme="dark"] .rh-mult-field input{background:transparent;color:var(--ac)}
+  [data-theme="dark"] .rh-mult-field input,
+  [data-theme="dark"] .rh-mult-field select{background:transparent;color:var(--ac)}
   [data-theme="dark"] .account-note{background:rgba(217,119,6,.12);color:#fbbf24}
   [data-theme="dark"] .account-note strong{color:var(--text)}
   [data-theme="dark"] .member-view-banner{background:rgba(217,119,6,.12);color:#fbbf24}
@@ -1970,6 +1976,9 @@
   const ROOM_LAYOUT_KEY = 'hatian-room-layout-v1';
   const AUDIT_KEY = 'hatian-audit-log-v1';
   const AUDIT_MAX = 500;
+
+  // Preset × multiplier values shown in the AC room selector.
+  const AC_MULT_OPTIONS = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10];
 
   const NUM_FMT = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const NUM_INPUT_FMT = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -3016,10 +3025,26 @@
       const card = document.createElement('div');
       card.className = 'room-card' + (room.hasAC ? '' : ' no-ac');
       card.dataset.roomMembers = group.map(p => (p.name || '').trim()).filter(Boolean).join('||');
-      // Hide the × multiplier when AC is off or we're in kWh mode.
-      const hideMult = (calcMode === 'kwh' || !room.hasAC);
-      // Hide the Together/Apart mode selector when the room is Solo or we're in kWh mode.
-      const hideMode = (calcMode === 'kwh' || room.type === 'solo');
+
+      // The × multiplier only matters in "Weighted days" mode, but we
+      // always keep it visible whenever the room has AC so users can
+      // see & set it. In kWh mode it's shown disabled with a hint.
+      const hideMult    = !room.hasAC;
+      const multDisabled = (calcMode === 'kwh') || !room.hasAC;
+
+      // Together/Apart only makes sense for shared rooms that have AC.
+      const hideMode    = !room.hasAC || room.type === 'solo';
+      const modeDisabled = (calcMode === 'kwh') || !room.hasAC || room.type === 'solo' || group.length < 2;
+
+      const multTitle  = calcMode === 'kwh' ? 'Only applies in "Weighted days" mode' : 'AC multiplier — how much more this room consumes';
+      const modeTitle  = calcMode === 'kwh' ? 'Only applies in "Weighted days" mode' : 'Together shares AC cost by actual overlap · Apart charges each their own days';
+
+      // Build the × selector options, snapping to the closest preset.
+      const curMult = clampMult(room.acMult);
+      const multOptsHtml = AC_MULT_OPTIONS.map(v =>
+        '<option value="' + v + '"' + (Math.abs(curMult - v) < 0.01 ? ' selected' : '') + '>' + v + '</option>'
+      ).join('');
+
       card.innerHTML = `
         <div class="room-header">
           <span class="rh-icon">🛏️</span>
@@ -3033,11 +3058,11 @@
               <input type="checkbox" class="rh-ac-check"${room.hasAC ? ' checked' : ''}>
               <span>AC</span>
             </label>
-            <div class="rh-mult-field${room.hasAC ? ' on' : ''}" style="${hideMult ? 'display:none' : ''}">
+            <div class="rh-mult-field${room.hasAC ? ' on' : ''}${multDisabled ? ' is-disabled' : ''}"${hideMult ? ' style="display:none"' : ''}${multTitle ? ' title="' + multTitle + '"' : ''}>
               <span class="rh-mult-label">×</span>
-              <input type="number" class="rh-mult" min="1" max="10" step="0.1" value="${trimNum(room.acMult)}"${room.hasAC ? '' : ' disabled'}>
+              <select class="rh-mult"${multDisabled ? ' disabled' : ''}>${multOptsHtml}</select>
             </div>
-            <select class="rh-mode" style="${hideMode ? 'display:none' : ''}"${(!room.hasAC || room.type === 'solo' || group.length < 2) ? ' disabled' : ''}>
+            <select class="rh-mode"${hideMode ? ' style="display:none"' : ''}${modeDisabled ? ' disabled' : ''}${modeTitle ? ' title="' + modeTitle + '"' : ''}>
               <option value="together"${room.mode === 'together' ? ' selected' : ''}>Together</option>
               <option value="apart"${room.mode === 'apart' ? ' selected' : ''}>Apart</option>
             </select>
@@ -3064,8 +3089,10 @@
         });
       });
       card.querySelector('.rh-ac-check').addEventListener('change', function () { room.hasAC = this.checked; layoutSig = ''; render(); });
-      card.querySelector('.rh-mult').addEventListener('input', function () { room.acMult = clampMult(this.value); render(); });
-      card.querySelector('.rh-mult').addEventListener('blur', function () { this.value = trimNum(room.acMult); });
+      const multEl = card.querySelector('.rh-mult');
+      if (multEl) {
+        multEl.addEventListener('change', function () { room.acMult = clampMult(this.value); render(); });
+      }
       card.querySelector('.rh-mode').addEventListener('change', function () { room.mode = this.value; layoutSig = ''; render(); });
       card.querySelector('.rh-remove').addEventListener('click', () => {
         if (!window.confirm('Remove "' + (room.name || 'Room') + '"?\n\nMembers will become unassigned.')) return;
